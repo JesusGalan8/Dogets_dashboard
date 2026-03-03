@@ -7,6 +7,7 @@ import BookingList from './components/BookingList'
 import Calendar from './components/Calendar'
 import Reports from './components/Reports'
 import Toast from './components/Toast'
+import Login from './components/Login'
 import { requestNotificationPermission, startNotificationChecker } from './utils/notifications'
 import { initGapi, initGis, isConnected, signIn, signOut, getStoredClientId } from './utils/googleCalendar'
 
@@ -15,6 +16,7 @@ export default function App() {
     const [sidebarOpen, setSidebarOpen] = useState(false)
     const [dataVersion, setDataVersion] = useState(0)
     const [googleStatus, setGoogleStatus] = useState('no-key') // no-key, disconnected, connected
+    const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('dogets_auth') === 'true')
     const location = useLocation()
 
     useEffect(() => {
@@ -76,6 +78,19 @@ export default function App() {
         setToasts(prev => prev.filter(t => t.id !== id))
     }, [])
 
+    if (!isAuthenticated) {
+        return (
+            <>
+                <Login onLogin={() => setIsAuthenticated(true)} addToast={addToast} />
+                <div className="toast-container">
+                    {toasts.map(toast => (
+                        <Toast key={toast.id} {...toast} onClose={() => removeToast(toast.id)} />
+                    ))}
+                </div>
+            </>
+        )
+    }
+
     return (
         <div className="app-layout">
             <Sidebar
@@ -84,6 +99,11 @@ export default function App() {
                 googleStatus={googleStatus}
                 onGoogleConnect={handleGoogleConnect}
                 onGoogleDisconnect={handleGoogleDisconnect}
+                onLogout={() => {
+                    localStorage.removeItem('dogets_auth')
+                    setIsAuthenticated(false)
+                    addToast('Sesión cerrada', 'info')
+                }}
             />
 
             <main className="app-main">

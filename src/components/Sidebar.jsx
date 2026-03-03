@@ -8,7 +8,7 @@ const navItems = [
     { path: '/informes', icon: '💰', label: 'Informes' },
 ]
 
-export default function Sidebar({ isOpen, onClose, googleStatus, onGoogleConnect, onGoogleDisconnect }) {
+export default function Sidebar({ isOpen, onClose, googleStatus, onGoogleConnect, onGoogleDisconnect, onLogout }) {
     return (
         <>
             {isOpen && <div className="sidebar-backdrop" onClick={onClose} style={{
@@ -72,6 +72,9 @@ export default function Sidebar({ isOpen, onClose, googleStatus, onGoogleConnect
                 </nav>
 
                 <div className="sidebar-footer">
+                    <button className="btn btn-ghost btn-sm" style={{ width: '100%', marginBottom: 'var(--space-md)', color: 'var(--danger)', fontSize: '0.8rem' }} onClick={onLogout}>
+                        🚪 Cerrar sesión
+                    </button>
                     <span style={{ opacity: 0.7 }}>Dogets v2.0</span>
                     <br />
                     <span style={{ fontSize: '0.65rem' }}>Hospedaje Canino</span>
