@@ -56,6 +56,10 @@ const BREED_ICONS = {
     boxer: `<svg viewBox="0 0 40 40" fill="currentColor"><path d="M12 7c-2 0-3 2-4 4l-1 4c0 2 1 4 2 4v4c0 4 3 7 6 8v2c0 1 1 2 2 2h6c1 0 2-1 2-2v-2c3-1 6-4 6-8v-4c1 0 2-2 2-4l-1-4c-1-2-2-4-4-4-2 0-3 1-4 3h-4c-1-2-2-3-4-3h-4zm4 13a2 2 0 110-4 2 2 0 010 4zm8 0a2 2 0 110-4 2 2 0 010 4zm-5 3h2v2c0 1-1 1-1 1s-1 0-1-1v-2z"/></svg>`,
 
     dalmata: `<svg viewBox="0 0 40 40" fill="currentColor"><path d="M14 6c-2 0-4 2-5 4l-1 3c0 2 1 4 2 5v4c0 4 3 7 5 8v2c0 1 1 2 2 2h6c1 0 2-1 2-2v-2c2-1 5-4 5-8v-4c1-1 2-3 2-5l-1-3c-1-2-3-4-5-4-1 0-2 1-3 2h-4c-1-1-2-2-3-2h-2z"/><circle cx="15" cy="13" r="1.5" fill="var(--bg-card)"/><circle cx="22" cy="15" r="1" fill="var(--bg-card)"/><circle cx="18" cy="22" r="1.2" fill="var(--bg-card)"/><circle cx="25" cy="20" r="1" fill="var(--bg-card)"/><circle cx="16" cy="19" r="2" /><circle cx="24" cy="19" r="2"/></svg>`,
+
+    longsnout: `<svg viewBox="0 0 40 40" fill="currentColor"><path d="M16 6c-3 0-5 2-6 4l-2 5c0 2 1 4 2 5v7c0 2 1 3 3 4h10c2 0 3-1 3-4v-7c1-1 2-3 2-5l-2-5c-1-2-3-4-6-4h-4zm0 13a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm8 0a1.5 1.5 0 110-3 1.5 1.5 0 010 3zm-4 7l-2-2h4l-2 2z"/></svg>`,
+
+    pointy: `<svg viewBox="0 0 40 40" fill="currentColor"><path d="M12 4L8 14c-1 3 0 6 2 8v6c0 2 2 4 4 4h12c2 0 4-2 4-4v-6c2-2 3-5 2-8L28 4l-4 6-4-2-4 2-4-6zm4 16a2 2 0 110-4 2 2 0 010 4zm8 0a2 2 0 110-4 2 2 0 010 4zm-4 4l-2-2h4l-2 2z"/></svg>`,
 };
 
 // Breed name normalization map (Spanish common names → icon key)
@@ -100,6 +104,15 @@ const BREED_MAP = {
     'doberman': 'boxer',
     'dálmata': 'dalmata',
     'dalmata': 'dalmata',
+    'galgo': 'longsnout',
+    'lebrel': 'longsnout',
+    'podenco': 'pointy',
+    'braco': 'beagle',
+    'pointer': 'beagle',
+    'mastín': 'boxer',
+    'mastin': 'boxer',
+    'pitbull': 'bulldog',
+    'bull terrier': 'bulldog',
 };
 
 export function getBreedKey(breed) {
@@ -119,14 +132,26 @@ export function getBreedKey(breed) {
     return 'default';
 }
 
-export function getBreedIcon(breed) {
+export function getBreedIcon(breed, dogId = '') {
     const key = getBreedKey(breed);
+
+    // Fallback pseudo-aleatorio para razas mezcladas/desconocidas:
+    if (key === 'default' && dogId) {
+        const fallbacks = ['default', 'pointy', 'default', 'beagle', 'longsnout', 'boxer', 'caniche'];
+        let hash = 0;
+        for (let i = 0; i < dogId.length; i++) {
+            hash = dogId.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const fallbackKey = fallbacks[Math.abs(hash) % fallbacks.length];
+        return BREED_ICONS[fallbackKey];
+    }
+
     return BREED_ICONS[key] || BREED_ICONS.default;
 }
 
 // React component for inline SVG breed icon
-export function BreedIconSVG({ breed, size = 24, color = 'currentColor', className = '' }) {
-    const svgStr = getBreedIcon(breed);
+export function BreedIconSVG({ breed, dogId = '', size = 24, color = 'currentColor', className = '' }) {
+    const svgStr = getBreedIcon(breed, dogId);
     return (
         <span
             className={className}
@@ -146,7 +171,7 @@ export function BreedIconSVG({ breed, size = 24, color = 'currentColor', classNa
 // Dog avatar component with breed icon and color
 export function DogAvatar({ breed, dogId, size = 52, className = '' }) {
     const color = getDogColor(dogId);
-    const svgStr = getBreedIcon(breed);
+    const svgStr = getBreedIcon(breed, dogId);
 
     return (
         <div
