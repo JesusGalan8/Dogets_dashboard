@@ -25,7 +25,7 @@ export default function Login({ onLogin, addToast }) {
         }}>
             <form className="card animate-in" style={{ width: '100%', maxWidth: 400 }} onSubmit={handleSubmit}>
                 <div style={{ textAlign: 'center', marginBottom: 'var(--space-lg)' }}>
-                    <img src="./logo.jpeg" alt="Dogets Logo" style={{ width: 80, height: 80, borderRadius: 'var(--radius-lg)', objectFit: 'cover', marginBottom: 'var(--space-md)' }} />
+                    <img src={`${import.meta.env.BASE_URL}logo.jpeg`} alt="Dogets Logo" style={{ width: 80, height: 80, borderRadius: 'var(--radius-lg)', objectFit: 'cover', marginBottom: 'var(--space-md)' }} />
                     <h1 className="page-title" style={{ fontSize: '1.5rem' }}>Acceso a Dogets</h1>
                     <p className="page-subtitle">Introduce la clave para continuar</p>
                 </div>

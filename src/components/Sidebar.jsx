@@ -17,7 +17,7 @@ export default function Sidebar({ isOpen, onClose, googleStatus, onGoogleConnect
             }} />}
             <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
-                    <img src="/logo.jpeg" alt="Dogets" className="sidebar-logo" />
+                    <img src={`${import.meta.env.BASE_URL}logo.jpeg`} alt="Dogets" className="sidebar-logo" />
                     <span className="sidebar-brand">Dogets</span>
                 </div>
 
