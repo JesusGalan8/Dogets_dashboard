@@ -129,48 +129,63 @@ export async function createCalendarEvents(booking) {
         const nightsLabel = nights === 0 ? 'Guardería (Día)' : `${nights} noche${nights !== 1 ? 's' : ''}`;
         const paymentStatus = booking.paid ? '✅ PAGADO' : '⏳ PENDIENTE DE COBRO';
 
-        // Google Calendar all-day events: end date is EXCLUSIVE,
-        // so we need to add 1 day to checkOut for it to include the last day
-        const endDate = new Date(booking.checkOut + 'T12:00:00');
-        endDate.setDate(endDate.getDate() + 1);
-        const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
-
-        const stayEvent = {
-            summary: `🐕 ${client.dogName} — ${booking.total}€ ${booking.paid ? '✅' : '⏳'}`,
-            description: `🐕 ${client.dogName}\n` +
+        // Create arrival event
+        const arrivalEvent = {
+            summary: `🐕 Llegada: ${client.dogName} — ${booking.total}€ ${booking.paid ? '✅' : '⏳'}`,
+            description: `🐕 LLEGADA: ${client.dogName}\n` +
                 `👤 Dueño: ${client.ownerName}\n` +
                 `📞 Teléfono: ${client.phone || 'N/A'}\n` +
                 `📧 Email: ${client.email || 'N/A'}\n` +
                 `🦴 Raza: ${client.breed || 'Mestizo'}\n` +
-                `\n📅 ESTANCIA:\n` +
-                `   Entrada: ${booking.checkIn}\n` +
-                `   Salida: ${booking.checkOut}\n` +
-                `   Duración: ${nightsLabel}\n` +
                 `\n💰 FACTURACIÓN:\n` +
                 `   ${nightsLabel} × ${booking.rate}€ = ${booking.total}€\n` +
                 (parseFloat(booking.discount) > 0 ? `   Descuento: ${booking.discount}%\n` : '') +
                 `   Estado: ${paymentStatus}\n` +
                 (booking.notes ? `\n📝 Notas: ${booking.notes}` : ''),
             start: { date: booking.checkIn },
-            end: { date: endDateStr },
+            end: { date: booking.checkIn },
             reminders: {
                 useDefault: false,
                 overrides: [
-                    { method: 'popup', minutes: 1440 }, // 1 day before arrival
-                    { method: 'popup', minutes: 120 },  // 2 hours before arrival
+                    { method: 'popup', minutes: 1440 }, // 1 day before
+                    { method: 'popup', minutes: 120 },  // 2 hours before
                 ],
             },
             colorId: '10', // Green
         };
 
-        const res = await window.gapi.client.calendar.events.insert({
+        const arrivalRes = await window.gapi.client.calendar.events.insert({
             calendarId: 'primary',
-            resource: stayEvent,
+            resource: arrivalEvent,
+        });
+
+        // Create departure event
+        const departureEvent = {
+            summary: `🏠 Salida: ${client.dogName} — Cobrar ${booking.total}€`,
+            description: `🏠 SALIDA: ${client.dogName}\n` +
+                `👤 ${client.ownerName} viene a recoger\n` +
+                `📞 Teléfono: ${client.phone || 'N/A'}\n` +
+                `\n💰 A COBRAR: ${booking.total}€\n` +
+                `   Estado: ${paymentStatus}`,
+            start: { date: booking.checkOut },
+            end: { date: booking.checkOut },
+            reminders: {
+                useDefault: false,
+                overrides: [
+                    { method: 'popup', minutes: 120 }, // 2 hours before
+                ],
+            },
+            colorId: '11', // Red
+        };
+
+        const departureRes = await window.gapi.client.calendar.events.insert({
+            calendarId: 'primary',
+            resource: departureEvent,
         });
 
         return {
-            arrivalEventId: res.result.id,
-            departureEventId: null,
+            arrivalEventId: arrivalRes.result.id,
+            departureEventId: departureRes.result.id,
         };
     } catch (e) {
         console.error('Error creating calendar event:', e);
