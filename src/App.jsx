@@ -38,9 +38,13 @@ export default function App() {
         initStorageSync(() => {
             clearTimeout(timeout)
             setIsSyncing(false)
-            refreshData()
+            setDataVersion(v => v + 1)
+        }).catch((err) => {
+            console.error("Firebase sync failed:", err)
+            clearTimeout(timeout)
+            setIsSyncing(false)
         })
-    }, [refreshData])
+    }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
     const initializeGoogle = async () => {
         const clientId = getStoredClientId()
