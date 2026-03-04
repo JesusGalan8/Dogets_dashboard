@@ -30,7 +30,13 @@ export default function App() {
         startNotificationChecker()
         initializeGoogle()
 
+        // Safety timeout: if Firebase doesn't respond in 5s, show app anyway
+        const timeout = setTimeout(() => {
+            setIsSyncing(false)
+        }, 5000)
+
         initStorageSync(() => {
+            clearTimeout(timeout)
             setIsSyncing(false)
             refreshData()
         })

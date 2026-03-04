@@ -19,8 +19,12 @@ let isInitialized = false;
 export async function initStorageSync(onDataChanged) {
     if (isInitialized) return;
 
-    // Step 1: Check if migration is needed
+    // Fallback: load from localStorage immediately so UI isn't blank
+    localClients = JSON.parse(localStorage.getItem(STORAGE_KEYS.CLIENTS) || '[]');
+    localBookings = JSON.parse(localStorage.getItem(STORAGE_KEYS.BOOKINGS) || '[]');
+
     try {
+        // Step 1: Check if migration is needed
         const clientsSnap = await getDocs(collection(db, "clients"));
         if (clientsSnap.empty) {
             // Firestore is empty, let's migrate from localStorage
@@ -43,22 +47,29 @@ export async function initStorageSync(onDataChanged) {
                 console.log("Migración completada.");
             }
         }
+
+        // Step 2: Setup Real-time Listeners
+        onSnapshot(collection(db, "clients"), (snapshot) => {
+            localClients = snapshot.docs.map(d => d.data());
+            onDataChanged();
+        }, (error) => {
+            console.error("Error en listener de clients:", error);
+        });
+
+        onSnapshot(collection(db, "bookings"), (snapshot) => {
+            localBookings = snapshot.docs.map(d => d.data());
+            onDataChanged();
+        }, (error) => {
+            console.error("Error en listener de bookings:", error);
+        });
+
+        isInitialized = true;
     } catch (e) {
-        console.error("Error validando migración", e);
+        console.error("Error conectando a Firebase, usando datos locales:", e);
+        // Already loaded from localStorage above, just signal ready
+        isInitialized = true;
+        onDataChanged();
     }
-
-    // Step 2: Setup Real-time Listeners
-    onSnapshot(collection(db, "clients"), (snapshot) => {
-        localClients = snapshot.docs.map(doc => doc.data());
-        onDataChanged();
-    });
-
-    onSnapshot(collection(db, "bookings"), (snapshot) => {
-        localBookings = snapshot.docs.map(doc => doc.data());
-        onDataChanged();
-    });
-
-    isInitialized = true;
 }
 
 // ---------- Generic Helpers ----------
