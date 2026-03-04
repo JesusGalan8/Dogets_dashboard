@@ -131,9 +131,9 @@ export async function createCalendarEvents(booking) {
 
         // Google Calendar all-day events: end date is EXCLUSIVE,
         // so we need to add 1 day to checkOut for it to include the last day
-        const endDate = new Date(booking.checkOut + 'T00:00:00');
+        const endDate = new Date(booking.checkOut + 'T12:00:00');
         endDate.setDate(endDate.getDate() + 1);
-        const endDateStr = endDate.toISOString().split('T')[0];
+        const endDateStr = `${endDate.getFullYear()}-${String(endDate.getMonth() + 1).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
 
         const stayEvent = {
             summary: `🐕 ${client.dogName} — ${booking.total}€ ${booking.paid ? '✅' : '⏳'}`,
