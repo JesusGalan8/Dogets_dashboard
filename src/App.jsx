@@ -176,7 +176,7 @@ export default function App() {
                     <Route path="/clientes" element={<ClientList key={dataVersion} addToast={addToast} refreshData={refreshData} />} />
                     <Route path="/reservas" element={<BookingList key={dataVersion} addToast={addToast} refreshData={refreshData} googleStatus={googleStatus} />} />
                     <Route path="/calendario" element={<Calendar key={dataVersion} addToast={addToast} refreshData={refreshData} googleStatus={googleStatus} />} />
-                    <Route path="/informes" element={<Reports key={dataVersion} addToast={addToast} onGoogleInit={initializeGoogle} googleStatus={googleStatus} onGoogleConnect={handleGoogleConnect} onGoogleDisconnect={handleGoogleDisconnect} deferredPrompt={deferredPrompt} clearPrompt={() => setDeferredPrompt(null)} />} />
+                    <Route path="/informes" element={<Reports key={dataVersion} addToast={addToast} refreshData={refreshData} onGoogleInit={initializeGoogle} googleStatus={googleStatus} onGoogleConnect={handleGoogleConnect} onGoogleDisconnect={handleGoogleDisconnect} deferredPrompt={deferredPrompt} clearPrompt={() => setDeferredPrompt(null)} />} />
                 </Routes>
             </main>
 

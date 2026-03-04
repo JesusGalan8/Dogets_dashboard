@@ -1,10 +1,10 @@
 import { useState, useMemo } from 'react'
-import { getBookings, getClients, getClientById, getMonthlyRevenue } from '../utils/storage'
+import { getBookings, getClients, getClientById, getMonthlyRevenue, saveBooking } from '../utils/storage'
 import { exportFutureBookingsICS } from '../utils/icsExport'
 import { exportClientsCSV, exportBookingsCSV } from '../utils/csvExport'
 import { getStoredClientId, setStoredClientId, initGapi, initGis } from '../utils/googleCalendar'
 
-export default function Reports({ addToast, onGoogleInit, googleStatus, onGoogleConnect, onGoogleDisconnect, deferredPrompt, clearPrompt }) {
+export default function Reports({ addToast, refreshData, onGoogleInit, googleStatus, onGoogleConnect, onGoogleDisconnect, deferredPrompt, clearPrompt }) {
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
     const [showGoogleSettings, setShowGoogleSettings] = useState(false)
     const [clientId, setClientId] = useState(getStoredClientId())
@@ -92,6 +92,22 @@ export default function Reports({ addToast, onGoogleInit, googleStatus, onGoogle
             setCustomLogo(reader.result)
         }
         reader.readAsDataURL(file)
+    }
+
+    const handleMarkAsPaid = async (booking, method) => {
+        const updates = {
+            paid: true,
+            paymentMethod: method,
+            notes: booking.notes
+                ? `${booking.notes}\n[Cobrado por ${method} desde Informes]`
+                : `[Cobrado por ${method} desde Informes]`
+        }
+        await saveBooking({ ...booking, ...updates })
+        addToast(`Cobro de ${booking.total}€ registrado (${method})`, 'success')
+        refreshData && refreshData()
+
+        // Force immediate local reload by clearing bookings memo dependency or just refreshData
+        // (refreshData from App will change dataVersion and force unmount/remount of this component)
     }
 
     return (
@@ -206,7 +222,17 @@ export default function Reports({ addToast, onGoogleInit, googleStatus, onGoogle
                                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{b.client?.dogName || '?'}</div>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{b.checkIn} → {b.checkOut}</div>
                                     </div>
-                                    <span style={{ color: 'var(--amber-500)', fontWeight: 700 }}>{b.total}€</span>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 'var(--space-xs)' }}>
+                                        <span style={{ color: 'var(--amber-500)', fontWeight: 700 }}>{b.total}€</span>
+                                        <div style={{ display: 'flex', gap: 4 }}>
+                                            <button className="btn btn-sm" style={{ backgroundColor: '#00c3a5', color: 'white', border: 'none', padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => handleMarkAsPaid(b, 'bizum')}>
+                                                Bizum
+                                            </button>
+                                            <button className="btn btn-sm" style={{ backgroundColor: '#fbbf24', color: '#78350f', border: 'none', padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => handleMarkAsPaid(b, 'efectivo')}>
+                                                Efectivo
+                                            </button>
+                                        </div>
+                                    </div>
                                 </div>
                             ))}
                         </div>
