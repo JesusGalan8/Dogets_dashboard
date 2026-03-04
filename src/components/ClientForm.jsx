@@ -12,6 +12,8 @@ export default function ClientForm({ client, onSave, onClose }) {
         allergies: '',
         vaccines: '',
         notes: '',
+        feedingNotes: '',
+        behaviorTags: '',
         emergencyName: '',
         emergencyPhone: '',
         ...client,
@@ -106,9 +108,21 @@ export default function ClientForm({ client, onSave, onClose }) {
                             <input className="form-input" name="allergies" value={form.allergies} onChange={handleChange} placeholder="Ej: Pollo, Maíz" />
                         </div>
 
+                        <div className="form-section-title">🦴 Comportamiento y Alimentación</div>
+
+                        <div className="form-group">
+                            <label className="form-label">Instrucciones de Alimentación</label>
+                            <textarea className="form-textarea" name="feedingNotes" value={form.feedingNotes} onChange={handleChange} placeholder="Ej: 2 cazos por la mañana secos, 1 cazo por la noche con un poco de agua caliente" rows={2} />
+                        </div>
+
+                        <div className="form-group">
+                            <label className="form-label">Etiquetas de Comportamiento (separar con comas)</label>
+                            <input className="form-input" name="behaviorTags" value={form.behaviorTags} onChange={handleChange} placeholder="Ej: Dominante, Miedoso a petardos, Sociable, Se escapa..." />
+                        </div>
+
                         <div className="form-group">
                             <label className="form-label">Notas adicionales</label>
-                            <textarea className="form-textarea" name="notes" value={form.notes} onChange={handleChange} placeholder="Comportamiento, necesidades especiales, medicación..." rows={3} />
+                            <textarea className="form-textarea" name="notes" value={form.notes} onChange={handleChange} placeholder="Necesidades especiales, medicación, etc..." rows={2} />
                         </div>
                     </div>
 

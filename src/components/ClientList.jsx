@@ -96,10 +96,11 @@ export default function ClientList({ addToast, refreshData }) {
                                 {client.phone && <div className="client-detail"><span className="client-detail-icon">📞</span><span>{client.phone}</span></div>}
                                 {client.email && <div className="client-detail"><span className="client-detail-icon">📧</span><span>{client.email}</span></div>}
                                 {client.stayCount > 0 && <div className="client-detail"><span className="client-detail-icon">📋</span><span>{client.stayCount} estancia{client.stayCount !== 1 ? 's' : ''}</span></div>}
-                                {(client.vaccines || client.allergies) && (
+                                {(client.vaccines || client.allergies || client.behaviorTags) && (
                                     <div className="tags-container" style={{ marginTop: 4 }}>
-                                        {client.vaccines && client.vaccines.split(',').slice(0, 2).map((v, i) => <span key={i} className="vaccine-tag">💉 {v.trim()}</span>)}
-                                        {client.allergies && client.allergies.split(',').slice(0, 2).map((a, i) => <span key={i} className="allergy-tag">⚠️ {a.trim()}</span>)}
+                                        {client.behaviorTags && client.behaviorTags.split(',').slice(0, 3).map((t, i) => <span key={`b-${i}`} className="behavior-tag">🏷️ {t.trim()}</span>)}
+                                        {client.vaccines && client.vaccines.split(',').slice(0, 2).map((v, i) => <span key={`v-${i}`} className="vaccine-tag">💉 {v.trim()}</span>)}
+                                        {client.allergies && client.allergies.split(',').slice(0, 2).map((a, i) => <span key={`a-${i}`} className="allergy-tag">⚠️ {a.trim()}</span>)}
                                     </div>
                                 )}
                             </div>
@@ -164,9 +165,21 @@ export default function ClientList({ addToast, refreshData }) {
                                     <div className="tags-container">{selectedClient.allergies.split(',').map((a, i) => <span key={i} className="allergy-tag">⚠️ {a.trim()}</span>)}</div>
                                 </div>
                             )}
+                            {selectedClient.behaviorTags && (
+                                <div style={{ marginTop: 'var(--space-md)' }}>
+                                    <h4 style={{ color: 'var(--amber-500)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-sm)' }}>🦴 Comportamiento</h4>
+                                    <div className="tags-container">{selectedClient.behaviorTags.split(',').map((t, i) => <span key={i} className="behavior-tag">🏷️ {t.trim()}</span>)}</div>
+                                </div>
+                            )}
+                            {selectedClient.feedingNotes && (
+                                <div style={{ marginTop: 'var(--space-md)' }}>
+                                    <h4 style={{ color: 'var(--amber-500)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-sm)' }}>🥩 Alimentación</h4>
+                                    <p style={{ color: 'var(--text-primary)', fontSize: '0.9rem', backgroundColor: 'var(--bg-elevated)', padding: 'var(--space-sm)', borderRadius: 'var(--radius-sm)' }}>{selectedClient.feedingNotes}</p>
+                                </div>
+                            )}
                             {selectedClient.notes && (
                                 <div style={{ marginTop: 'var(--space-md)' }}>
-                                    <h4 style={{ color: 'var(--amber-500)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-sm)' }}>📝 Notas</h4>
+                                    <h4 style={{ color: 'var(--amber-500)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 'var(--space-sm)' }}>📝 Notas Generales</h4>
                                     <p style={{ color: 'var(--text-secondary)', fontSize: '0.9rem' }}>{selectedClient.notes}</p>
                                 </div>
                             )}

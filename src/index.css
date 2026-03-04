@@ -687,6 +687,43 @@ h4 {
     color: var(--text-secondary);
 }
 
+.vaccine-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: rgba(59, 130, 246, 0.1);
+    color: #3b82f6;
+    border: 1px solid rgba(59, 130, 246, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.allergy-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: rgba(239, 68, 68, 0.1);
+    color: var(--danger);
+    border: 1px solid rgba(239, 68, 68, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
+.behavior-tag {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    background: rgba(168, 85, 247, 0.1);
+    /* Purple/Indigo subtle background */
+    color: #a855f7;
+    border: 1px solid rgba(168, 85, 247, 0.2);
+    border-radius: var(--radius-sm);
+    font-size: 0.72rem;
+    font-weight: 600;
+}
+
 /* ---------- Page Header ---------- */
 .page-header {
     display: flex;
@@ -1676,7 +1713,9 @@ code {
     font-size: 0.82rem;
     font-family: var(--font-mono);
     color: var(--amber-500);
-}/* ---------- Mobile App Layout (Bottom Nav) ---------- */
+}
+
+/* ---------- Mobile App Layout (Bottom Nav) ---------- */
 @media (max-width: 768px) {
     .app-main {
         margin-left: 0 !important;

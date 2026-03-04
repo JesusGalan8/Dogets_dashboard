@@ -9,6 +9,7 @@ export default function Reports({ addToast, onGoogleInit }) {
     const [showGoogleSettings, setShowGoogleSettings] = useState(false)
     const [clientId, setClientId] = useState(getStoredClientId())
     const [maxCapacity, setMaxCapacity] = useState(localStorage.getItem('dogets_max_capacity') || '10')
+    const [customLogo, setCustomLogo] = useState(localStorage.getItem('dogets_custom_logo') || '')
 
     const bookings = useMemo(() => getBookings(), [selectedYear])
 
@@ -68,9 +69,29 @@ export default function Reports({ addToast, onGoogleInit }) {
     const handleSaveGoogleSettings = () => {
         setStoredClientId(clientId)
         localStorage.setItem('dogets_max_capacity', maxCapacity)
+        if (customLogo) {
+            localStorage.setItem('dogets_custom_logo', customLogo)
+        } else {
+            localStorage.removeItem('dogets_custom_logo')
+        }
+        window.dispatchEvent(new Event('logo-updated')) // Emit event so Sidebar can update without refreshing
         onGoogleInit?.()
         setShowGoogleSettings(false)
         addToast('Ajustes guardados correctamente', 'success')
+    }
+
+    const handleLogoUpload = (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+        if (file.size > 2 * 1024 * 1024) { // 2MB max
+            addToast('La imagen es demasiado grande. Máx 2MB.', 'error')
+            return
+        }
+        const reader = new FileReader()
+        reader.onloadend = () => {
+            setCustomLogo(reader.result)
+        }
+        reader.readAsDataURL(file)
     }
 
     return (
@@ -219,6 +240,36 @@ export default function Reports({ addToast, onGoogleInit }) {
                                 <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 4 }}>
                                     Número máximo de perros que puedes alojar simultáneamente
                                 </p>
+                            </div>
+
+                            <div className="form-section-title" style={{ marginTop: 'var(--space-lg)' }}>🖼️ Personalización de Marca</div>
+                            <div className="form-group">
+                                <label className="form-label">Logo de tu negocio</label>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                                    <div style={{
+                                        width: 60, height: 60, borderRadius: 'var(--radius-md)',
+                                        background: 'var(--bg-elevated)', border: '1px solid var(--border-default)',
+                                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                                        overflow: 'hidden', flexShrink: 0
+                                    }}>
+                                        {customLogo ? (
+                                            <img src={customLogo} alt="Logo Prev" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                                        ) : (
+                                            <span style={{ fontSize: '1.5rem' }}>🐕</span>
+                                        )}
+                                    </div>
+                                    <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 'var(--space-xs)' }}>
+                                        <input type="file" accept="image/*" onChange={handleLogoUpload} style={{ fontSize: '0.8rem' }} />
+                                        {customLogo && (
+                                            <button className="btn btn-ghost btn-sm" style={{ alignSelf: 'flex-start', color: 'var(--danger)', padding: 0 }} onClick={() => setCustomLogo('')}>
+                                                Quitar logo
+                                            </button>
+                                        )}
+                                        <p style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>
+                                            Este logo reemplazará al icono del perro en el menú lateral. Máximo 2MB.
+                                        </p>
+                                    </div>
+                                </div>
                             </div>
                         </div>
                         <div className="modal-footer">

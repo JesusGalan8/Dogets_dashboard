@@ -72,7 +72,7 @@ export default function Dashboard({ addToast, refreshData }) {
         setStats(getStats())
     }
 
-    const dailyTasks = ['🌅 Paseo mañana', '🍖 Comida', '🌇 Paseo tarde', '🍗 Cena']
+    const dailyTasks = ['🌅 Paseo mañana', '🍖 Comida', '🌇 Paseo tarde', '🍗 Cena', '📷 Foto enviada']
 
     return (
         <div className="animate-in">
@@ -116,10 +116,87 @@ export default function Dashboard({ addToast, refreshData }) {
                 </div>
             </div>
 
-            {/* Active Bookings with Check-in/out */}
+            {/* Daily Care Dashboard (Replaces old tasks table) */}
+            {activeBookings.length > 0 && (
+                <div style={{ marginBottom: 'var(--space-xl)' }}>
+                    <h2 style={{ fontSize: '1.2rem', marginBottom: 'var(--space-md)' }}>📝 Panel de Cuidados Diarios</h2>
+
+                    <div className="cards-grid">
+                        {activeBookings.map(b => (
+                            <div key={`care-${b.id}`} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
+                                    <DogAvatar breed={b.client?.breed} dogId={b.clientId} size={48} />
+                                    <div style={{ flex: 1 }}>
+                                        <h3 style={{ fontSize: '1.1rem', margin: 0 }}>{b.client?.dogName}</h3>
+                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>{b.client?.ownerName}</div>
+                                    </div>
+                                </div>
+
+                                {/* Vital Info Tags */}
+                                {(b.client?.allergies || b.client?.behaviorTags || b.alerts) && (
+                                    <div className="tags-container" style={{ margin: 'var(--space-xs) 0' }}>
+                                        {b.alerts && <span className="allergy-tag">⚠️ {b.alerts}</span>}
+                                        {b.client?.allergies && b.client.allergies.split(',').slice(0, 2).map((a, i) => <span key={`ca-${i}`} className="allergy-tag">⚠️ {a.trim()}</span>)}
+                                        {b.client?.behaviorTags && b.client.behaviorTags.split(',').slice(0, 3).map((t, i) => <span key={`cb-${i}`} className="behavior-tag">🏷️ {t.trim()}</span>)}
+                                    </div>
+                                )}
+
+                                {/* Feeding Instructions */}
+                                {b.client?.feedingNotes && (
+                                    <div style={{ background: 'var(--bg-elevated)', borderRadius: 'var(--radius-sm)', padding: 'var(--space-sm)', fontSize: '0.85rem' }}>
+                                        <div style={{ color: 'var(--amber-500)', fontWeight: 600, fontSize: '0.75rem', textTransform: 'uppercase', marginBottom: 2 }}>🥩 Alimentación:</div>
+                                        <div style={{ color: 'var(--text-primary)' }}>{b.client.feedingNotes}</div>
+                                    </div>
+                                )}
+
+                                {/* Checklist */}
+                                <div style={{ marginTop: 'var(--space-xs)', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                                    {dailyTasks.map(task => (
+                                        <label key={task} className="checklist-item" style={{
+                                            display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
+                                            padding: '8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                                            background: isTaskDone(b.clientId, task) ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg-card-hover)',
+                                            border: `1px solid ${isTaskDone(b.clientId, task) ? 'rgba(34, 197, 94, 0.3)' : 'var(--border-default)'}`
+                                        }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={isTaskDone(b.clientId, task)}
+                                                onChange={() => toggleTask(b.clientId, task)}
+                                                style={{ width: 22, height: 22, accentColor: task.includes('Foto enviada') ? '#25D366' : 'var(--amber-500)', cursor: 'pointer' }}
+                                            />
+                                            <span style={{
+                                                fontSize: '0.95rem',
+                                                textDecoration: isTaskDone(b.clientId, task) ? 'line-through' : 'none',
+                                                color: isTaskDone(b.clientId, task) ? 'var(--text-muted)' : 'var(--text-primary)'
+                                            }}>
+                                                {task}
+                                            </span>
+                                        </label>
+                                    ))}
+                                </div>
+
+                                {/* Send Video Action */}
+                                {b.client?.phone && (
+                                    <a
+                                        href={`https://wa.me/34${b.client.phone.replace(/\s/g, '')}?text=${encodeURIComponent(`¡Hola ${b.client.ownerName}! 🐾 ¡Todo genial por aquí hoy con ${b.client.dogName}! Ya ha hecho sus cosas y comido sin problema. Te paso vídeo/foto del día:`)}`}
+                                        target="_blank"
+                                        rel="noopener"
+                                        className="btn btn-secondary w-full"
+                                        style={{ backgroundColor: 'rgba(37, 211, 102, 0.1)', color: '#25D366', borderColor: '#25D366', justifyContent: 'center', marginTop: 'var(--space-xs)' }}
+                                    >
+                                        📱 Abrir WhatsApp
+                                    </a>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            )}
+
+            {/* Active Bookings (Check-in/out Management) */}
             <div style={{ marginBottom: 'var(--space-xl)' }}>
                 <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 'var(--space-md)' }}>
-                    <h2 style={{ fontSize: '1.2rem' }}>🏠 Hospedados ahora</h2>
+                    <h2 style={{ fontSize: '1.2rem' }}>🏠 Gestión de Entradas/Salidas</h2>
                     <button className="btn btn-ghost btn-sm" onClick={() => navigate('/reservas')}>Ver todas →</button>
                 </div>
                 {activeBookings.length === 0 ? (
@@ -127,7 +204,7 @@ export default function Dashboard({ addToast, refreshData }) {
                         No hay perros hospedados actualmente
                     </div>
                 ) : (
-                    <div className="dog-cards-grid">
+                    <div className="cards-grid">
                         {activeBookings.map(b => (
                             <div key={b.id} className="card" style={{ padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', position: 'relative', overflow: 'hidden' }}>
                                 {/* Header: Dog Info */}
@@ -181,20 +258,6 @@ export default function Dashboard({ addToast, refreshData }) {
                                     </div>
                                 )}
 
-                                {/* WhatsApp Quick Action */}
-                                {b.client?.phone && (
-                                    <a
-                                        href={`https://wa.me/34${b.client.phone.replace(/\s/g, '')}?text=${encodeURIComponent(`¡Hola ${b.client.ownerName}! 🐾 Todo genial por aquí con ${b.client.dogName} hoy. ¡Te mando foto!`)}`}
-                                        target="_blank"
-                                        rel="noopener"
-                                        className="btn btn-secondary w-full"
-                                        style={{ backgroundColor: '#25D366', color: 'white', borderColor: '#25D366', justifyContent: 'center', gap: 'var(--space-sm)' }}
-                                    >
-                                        <span style={{ fontSize: '1.2rem' }}>📱</span>
-                                        <span>Enviar foto de hoy a {b.client.ownerName}</span>
-                                    </a>
-                                )}
-
                                 {/* Card Footer: Check-in/out info */}
                                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-default)' }}>
                                     <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap', flex: 1 }}>
@@ -223,45 +286,6 @@ export default function Dashboard({ addToast, refreshData }) {
                     </div>
                 )}
             </div>
-
-            {/* Daily Checklist */}
-            {activeBookings.length > 0 && (
-                <div style={{ marginBottom: 'var(--space-xl)' }}>
-                    <h2 style={{ fontSize: '1.2rem', marginBottom: 'var(--space-md)' }}>📝 Tareas del día</h2>
-                    <div className="card" style={{ padding: 'var(--space-lg)', overflowX: 'auto' }}>
-                        <table className="table" style={{ minWidth: 500 }}>
-                            <thead>
-                                <tr>
-                                    <th>Perro</th>
-                                    {dailyTasks.map(t => <th key={t} style={{ textAlign: 'center', textTransform: 'none', letterSpacing: 0 }}>{t}</th>)}
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {activeBookings.map(b => (
-                                    <tr key={b.id}>
-                                        <td style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                                                <DogAvatar breed={b.client?.breed} dogId={b.clientId} size={28} />
-                                                {b.client?.dogName}
-                                            </div>
-                                        </td>
-                                        {dailyTasks.map(task => (
-                                            <td key={task} style={{ textAlign: 'center' }}>
-                                                <input
-                                                    type="checkbox"
-                                                    checked={isTaskDone(b.clientId, task)}
-                                                    onChange={() => toggleTask(b.clientId, task)}
-                                                    style={{ width: 20, height: 20, accentColor: 'var(--amber-500)', cursor: 'pointer' }}
-                                                />
-                                            </td>
-                                        ))}
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            )}
 
             {/* Upcoming */}
             <div>

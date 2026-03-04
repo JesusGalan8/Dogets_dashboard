@@ -1,4 +1,5 @@
 import { NavLink } from 'react-router-dom'
+import { useState, useEffect } from 'react'
 
 const navItems = [
     { path: '/', icon: '📊', label: 'Dashboard' },
@@ -9,6 +10,16 @@ const navItems = [
 ]
 
 export default function Sidebar({ isOpen, onClose, googleStatus, onGoogleConnect, onGoogleDisconnect, onLogout, deferredPrompt, clearPrompt }) {
+    const [customLogo, setCustomLogo] = useState(localStorage.getItem('dogets_custom_logo') || '')
+
+    useEffect(() => {
+        const handleLogoUpdate = () => {
+            setCustomLogo(localStorage.getItem('dogets_custom_logo') || '')
+        }
+        window.addEventListener('logo-updated', handleLogoUpdate)
+        return () => window.removeEventListener('logo-updated', handleLogoUpdate)
+    }, [])
+
     return (
         <>
             {isOpen && <div className="sidebar-backdrop" onClick={onClose} style={{
@@ -17,7 +28,7 @@ export default function Sidebar({ isOpen, onClose, googleStatus, onGoogleConnect
             }} />}
             <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
                 <div className="sidebar-header">
-                    <img src={`${import.meta.env.BASE_URL}logo.jpeg`} alt="Dogets" className="sidebar-logo" />
+                    <img src={customLogo || `${import.meta.env.BASE_URL}logo.jpeg`} alt="Negocio" className="sidebar-logo" style={{ objectFit: 'cover' }} />
                     <span className="sidebar-brand">Dogets</span>
                 </div>
 
