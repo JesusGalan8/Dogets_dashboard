@@ -19,7 +19,17 @@ export default function App() {
     const [googleStatus, setGoogleStatus] = useState('no-key') // no-key, disconnected, connected
     const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('dogets_auth') === 'true')
     const [isSyncing, setIsSyncing] = useState(true)
+    const [deferredPrompt, setDeferredPrompt] = useState(null)
     const location = useLocation()
+
+    useEffect(() => {
+        const handleBeforeInstallPrompt = (e) => {
+            e.preventDefault()
+            setDeferredPrompt(e)
+        }
+        window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+        return () => window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt)
+    }, [])
 
     useEffect(() => {
         setSidebarOpen(false)
@@ -130,6 +140,8 @@ export default function App() {
                     setIsAuthenticated(false)
                     addToast('Sesión cerrada', 'info')
                 }}
+                deferredPrompt={deferredPrompt}
+                clearPrompt={() => setDeferredPrompt(null)}
             />
 
             <main className="app-main">

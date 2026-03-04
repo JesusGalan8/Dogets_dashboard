@@ -1,0 +1,21 @@
+{
+    "name": "Dogets",
+    "short_name": "Dogets",
+    "start_url": "./",
+    "display": "standalone",
+    "background_color": "#0a0a0a",
+    "theme_color": "#0a0a0a",
+    "description": "Dog Boarding Management",
+    "icons": [
+        {
+            "src": "./logo.jpeg",
+            "sizes": "192x192",
+            "type": "image/jpeg"
+        },
+        {
+            "src": "./logo.jpeg",
+            "sizes": "512x512",
+            "type": "image/jpeg"
+        }
+    ]
+}

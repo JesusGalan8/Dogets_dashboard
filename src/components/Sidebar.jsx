@@ -8,7 +8,7 @@ const navItems = [
     { path: '/informes', icon: '💰', label: 'Informes' },
 ]
 
-export default function Sidebar({ isOpen, onClose, googleStatus, onGoogleConnect, onGoogleDisconnect, onLogout }) {
+export default function Sidebar({ isOpen, onClose, googleStatus, onGoogleConnect, onGoogleDisconnect, onLogout, deferredPrompt, clearPrompt }) {
     return (
         <>
             {isOpen && <div className="sidebar-backdrop" onClick={onClose} style={{
@@ -68,6 +68,33 @@ export default function Sidebar({ isOpen, onClose, googleStatus, onGoogleConnect
                                 </button>
                             )}
                         </div>
+
+                        {deferredPrompt && (
+                            <div style={{
+                                background: 'var(--bg-card)',
+                                borderRadius: 'var(--radius-md)',
+                                padding: 'var(--space-md)',
+                                border: '1px solid var(--amber-500)',
+                                marginTop: 'var(--space-md)'
+                            }}>
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', marginBottom: 'var(--space-sm)' }}>
+                                    <span style={{ fontSize: '1.2rem' }}>📱</span>
+                                    <span style={{ fontSize: '0.82rem', fontWeight: 600 }}>App Nativa</span>
+                                </div>
+                                <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', lineHeight: 1.4, marginBottom: 'var(--space-sm)' }}>
+                                    Instala Dogets en tu pantalla de inicio para acceso offline.
+                                </p>
+                                <button className="btn btn-primary btn-sm" style={{ width: '100%', fontSize: '0.78rem' }} onClick={async () => {
+                                    deferredPrompt.prompt()
+                                    const { outcome } = await deferredPrompt.userChoice
+                                    if (outcome === 'accepted') {
+                                        clearPrompt()
+                                    }
+                                }}>
+                                    Instalar App
+                                </button>
+                            </div>
+                        )}
                     </div>
                 </nav>
 
