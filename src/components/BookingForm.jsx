@@ -11,6 +11,7 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
         checkOut: '',
         rate: 15,
         paid: false,
+        paymentMethod: booking?.paymentMethod || 'cash',
         notes: '',
         alerts: '',
         photoUrl: '',
@@ -96,6 +97,7 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
             nights,
             total: finalTotal,
             customTotal: form.useCustomTotal ? form.customTotal : '',
+            paymentMethod: form.paid ? form.paymentMethod : null,
             syncGoogle: form.syncGoogle,
         })
     }
@@ -217,6 +219,30 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
                                     {form.paid ? 'Pagado' : 'Pendiente'}
                                 </span>
                             </label>
+
+                            {form.paid && (
+                                <div style={{
+                                    marginTop: 'var(--space-sm)',
+                                    paddingLeft: 'var(--space-xl)',
+                                    display: 'flex',
+                                    gap: 'var(--space-md)'
+                                }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer', fontSize: '0.9rem' }}>
+                                        <input type="radio" name="paymentMethod" value="cash"
+                                            checked={form.paymentMethod === 'cash'}
+                                            onChange={handleChange}
+                                            style={{ accentColor: 'var(--amber-500)' }} />
+                                        <span>💵 Efectivo</span>
+                                    </label>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer', fontSize: '0.9rem' }}>
+                                        <input type="radio" name="paymentMethod" value="bizum"
+                                            checked={form.paymentMethod === 'bizum'}
+                                            onChange={handleChange}
+                                            style={{ accentColor: 'var(--amber-500)' }} />
+                                        <span>📱 Bizum</span>
+                                    </label>
+                                </div>
+                            )}
                         </div>
 
                         {/* Google Calendar sync */}

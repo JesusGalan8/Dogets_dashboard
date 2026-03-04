@@ -18,11 +18,18 @@ export default function Reports({ addToast, onGoogleInit }) {
 
     const yearStats = useMemo(() => {
         let totalRevenue = 0, totalNights = 0, paidCount = 0, unpaidAmount = 0
+        let cashAmount = 0, bizumAmount = 0
+
         yearBookings.forEach(b => {
-            totalRevenue += b.total || 0
+            const amount = b.total || 0
+            totalRevenue += amount
             totalNights += b.nights || 0
-            if (b.paid) paidCount++
-            else unpaidAmount += b.total || 0
+            if (b.paid) {
+                paidCount++
+                if (b.paymentMethod === 'bizum') bizumAmount += amount
+                else cashAmount += amount // Default to cash if undefined but paid
+            }
+            else unpaidAmount += amount
         })
         return {
             totalRevenue: Math.round(totalRevenue * 100) / 100,
@@ -30,6 +37,8 @@ export default function Reports({ addToast, onGoogleInit }) {
             totalNights,
             avgPerBooking: yearBookings.length ? Math.round(totalRevenue / yearBookings.length) : 0,
             paidCount,
+            cashAmount: Math.round(cashAmount * 100) / 100,
+            bizumAmount: Math.round(bizumAmount * 100) / 100,
             unpaidCount: yearBookings.length - paidCount,
             unpaidAmount: Math.round(unpaidAmount * 100) / 100,
         }
@@ -133,6 +142,10 @@ export default function Reports({ addToast, onGoogleInit }) {
                         <div>
                             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--success)' }}>{yearStats.paidCount}</div>
                             <div style={{ fontSize: '0.82rem', color: 'var(--text-muted)' }}>Pagadas</div>
+                            <div style={{ marginTop: 'var(--space-xs)', fontSize: '0.75rem', display: 'flex', flexDirection: 'column', gap: '2px' }}>
+                                <span style={{ color: 'var(--text-secondary)' }}>💵 {yearStats.cashAmount}€ efectivo</span>
+                                <span style={{ color: 'var(--text-secondary)' }}>📱 {yearStats.bizumAmount}€ bizum</span>
+                            </div>
                         </div>
                         <div>
                             <div style={{ fontSize: '1.5rem', fontWeight: 700, color: 'var(--warning)' }}>{yearStats.unpaidCount}</div>

@@ -145,12 +145,22 @@ export default function BookingList({ addToast, refreshData, googleStatus }) {
                                         </td>
                                         <td><span className={`badge ${statusClass[status]}`}>{statusLabels[status]}</span></td>
                                         <td>
-                                            <span className={`badge ${b.paid ? 'badge-success' : 'badge-warning'}`}>
-                                                {b.paid ? '✅ Pagado' : '⏳ Pendiente'}
-                                            </span>
+                                            {!b.paid ? (
+                                                <span className="badge badge-warning">⏳ Pendiente</span>
+                                            ) : (
+                                                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', alignItems: 'flex-start' }}>
+                                                    <span className="badge badge-success">✅ Pagado</span>
+                                                    <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', display: 'flex', alignItems: 'center', gap: '4px' }}>
+                                                        {b.paymentMethod === 'bizum' ? '📱 Bizum' : '💵 Efectivo'}
+                                                    </span>
+                                                </div>
+                                            )}
                                         </td>
                                         <td>
                                             <div style={{ display: 'flex', gap: 4 }}>
+                                                {b.photoUrl && (
+                                                    <button className="btn btn-ghost btn-sm" title="Ver Maleta" onClick={() => window.open(b.photoUrl, '_blank')}>🎒</button>
+                                                )}
                                                 <button className="btn btn-ghost btn-sm" title="Editar" onClick={() => { setEditBooking(b); setShowForm(true); }}>✏️</button>
                                                 <button className="btn btn-ghost btn-sm" title="Exportar .ics" onClick={() => { downloadBookingICS(b); addToast('Archivo .ics descargado', 'success'); }}>📅</button>
                                                 <button className="btn btn-ghost btn-sm" title="Eliminar" style={{ color: 'var(--danger)' }} onClick={() => setConfirmDelete(b)}>🗑️</button>
