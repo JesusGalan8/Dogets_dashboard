@@ -39,14 +39,14 @@ export default function BookingList({ addToast, refreshData, googleStatus }) {
     })
 
     const handleSave = async (data) => {
-        const savedBooking = saveBooking(data)
+        const savedBooking = await saveBooking(data)
 
         // Auto-sync to Google Calendar when connected
         if (isConnected()) {
-            const result = await createCalendarEvents(savedBooking || data)
+            const result = await createCalendarEvents(savedBooking)
             if (result) {
-                saveBooking({
-                    ...savedBooking || data,
+                await saveBooking({
+                    ...savedBooking,
                     googleArrivalEventId: result.arrivalEventId,
                     googleDepartureEventId: result.departureEventId,
                 })
@@ -65,7 +65,7 @@ export default function BookingList({ addToast, refreshData, googleStatus }) {
         if (booking.googleArrivalEventId || booking.googleDepartureEventId) {
             await deleteCalendarEvents(booking)
         }
-        deleteBooking(booking.id)
+        await deleteBooking(booking.id)
         loadBookings()
         setConfirmDelete(null)
         refreshData()
