@@ -117,7 +117,7 @@ export function signOut() {
     }
 }
 
-// Create calendar events for a booking
+// Create calendar event for a booking (spans entire stay)
 export async function createCalendarEvents(booking) {
     if (!isConnected()) return null;
 
@@ -129,66 +129,51 @@ export async function createCalendarEvents(booking) {
         const nightsLabel = nights === 0 ? 'Guardería (Día)' : `${nights} noche${nights !== 1 ? 's' : ''}`;
         const paymentStatus = booking.paid ? '✅ PAGADO' : '⏳ PENDIENTE DE COBRO';
 
-        // Create arrival event
-        const arrivalEvent = {
+        // Google Calendar all-day events: end date is EXCLUSIVE,
+        // so we need to add 1 day to checkOut for it to include the last day
+        const endDate = new Date(booking.checkOut + 'T00:00:00');
+        endDate.setDate(endDate.getDate() + 1);
+        const endDateStr = endDate.toISOString().split('T')[0];
+
+        const stayEvent = {
             summary: `🐕 ${client.dogName} — ${booking.total}€ ${booking.paid ? '✅' : '⏳'}`,
-            description: `🐕 LLEGADA: ${client.dogName}\n` +
+            description: `🐕 ${client.dogName}\n` +
                 `👤 Dueño: ${client.ownerName}\n` +
                 `📞 Teléfono: ${client.phone || 'N/A'}\n` +
                 `📧 Email: ${client.email || 'N/A'}\n` +
                 `🦴 Raza: ${client.breed || 'Mestizo'}\n` +
+                `\n📅 ESTANCIA:\n` +
+                `   Entrada: ${booking.checkIn}\n` +
+                `   Salida: ${booking.checkOut}\n` +
+                `   Duración: ${nightsLabel}\n` +
                 `\n💰 FACTURACIÓN:\n` +
                 `   ${nightsLabel} × ${booking.rate}€ = ${booking.total}€\n` +
                 (parseFloat(booking.discount) > 0 ? `   Descuento: ${booking.discount}%\n` : '') +
                 `   Estado: ${paymentStatus}\n` +
                 (booking.notes ? `\n📝 Notas: ${booking.notes}` : ''),
             start: { date: booking.checkIn },
-            end: { date: booking.checkIn },
+            end: { date: endDateStr },
             reminders: {
                 useDefault: false,
                 overrides: [
-                    { method: 'popup', minutes: 1440 }, // 1 day before
-                    { method: 'popup', minutes: 120 },  // 2 hours before
+                    { method: 'popup', minutes: 1440 }, // 1 day before arrival
+                    { method: 'popup', minutes: 120 },  // 2 hours before arrival
                 ],
             },
             colorId: '10', // Green
         };
 
-        const arrivalRes = await window.gapi.client.calendar.events.insert({
+        const res = await window.gapi.client.calendar.events.insert({
             calendarId: 'primary',
-            resource: arrivalEvent,
-        });
-
-        // Create departure event
-        const departureEvent = {
-            summary: `🏠 Salida: ${client.dogName} — Cobrar ${booking.total}€`,
-            description: `🏠 SALIDA: ${client.dogName}\n` +
-                `👤 ${client.ownerName} viene a recoger\n` +
-                `📞 Teléfono: ${client.phone || 'N/A'}\n` +
-                `\n💰 A COBRAR: ${booking.total}€\n` +
-                `   Estado: ${paymentStatus}`,
-            start: { date: booking.checkOut },
-            end: { date: booking.checkOut },
-            reminders: {
-                useDefault: false,
-                overrides: [
-                    { method: 'popup', minutes: 120 }, // 2 hours before
-                ],
-            },
-            colorId: '11', // Red
-        };
-
-        const departureRes = await window.gapi.client.calendar.events.insert({
-            calendarId: 'primary',
-            resource: departureEvent,
+            resource: stayEvent,
         });
 
         return {
-            arrivalEventId: arrivalRes.result.id,
-            departureEventId: departureRes.result.id,
+            arrivalEventId: res.result.id,
+            departureEventId: null,
         };
     } catch (e) {
-        console.error('Error creating calendar events:', e);
+        console.error('Error creating calendar event:', e);
         return null;
     }
 }
