@@ -299,24 +299,30 @@ export default function Dashboard({ addToast, refreshData }) {
                     </div>
                 ) : (
                     upcomingBookings.map(b => (
-                        <div key={b.id} className="booking-row">
-                            <DogAvatar breed={b.client?.breed} dogId={b.clientId} size={40} />
-                            <div className="booking-dog-name">{b.client?.dogName || 'Desconocido'}</div>
-                            <div className="booking-dates">Llega: {formatDate(b.checkIn)}</div>
-                            <span className="badge badge-info">Próxima</span>
-                            <div className="booking-price">{b.total}€</div>
-                            {b.client?.phone && (
-                                <a
-                                    href={`https://wa.me/34${b.client.phone.replace(/\s/g, '')}?text=${encodeURIComponent(`Hola ${b.client.ownerName}, te escribo desde Dogets para confirmar la reserva de ${b.client.dogName} el ${formatDate(b.checkIn)}.`)}`}
-                                    target="_blank"
-                                    rel="noopener"
-                                    className="btn btn-ghost btn-sm"
-                                    title="Enviar WhatsApp"
-                                    style={{ color: '#25D366' }}
-                                >
-                                    📱 WhatsApp
-                                </a>
-                            )}
+                        <div key={b.id} className="booking-row" style={{ padding: 'var(--space-sm) var(--space-md)' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)', flex: 1, minWidth: 220 }}>
+                                <DogAvatar breed={b.client?.breed} dogId={b.clientId} size={44} />
+                                <div>
+                                    <div className="booking-dog-name">{b.client?.dogName || 'Desconocido'}</div>
+                                    <div className="booking-dates" style={{ marginTop: 2 }}>Llega: {formatDate(b.checkIn)}</div>
+                                </div>
+                            </div>
+                            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 'var(--space-xs)' }}>
+                                <span className="badge badge-info" style={{ alignSelf: 'flex-end', marginBottom: 2 }}>Próxima</span>
+                                <div className="booking-price">{b.total}€</div>
+                                {b.client?.phone && (
+                                    <a
+                                        href={`https://wa.me/34${b.client.phone.replace(/\s/g, '')}?text=${encodeURIComponent(`Hola ${b.client.ownerName}, te escribo desde Dogets para confirmar la reserva de ${b.client.dogName} el ${formatDate(b.checkIn)}.`)}`}
+                                        target="_blank"
+                                        rel="noopener"
+                                        className="btn btn-ghost btn-sm"
+                                        title="Enviar WhatsApp"
+                                        style={{ color: '#25D366', padding: '2px 8px', fontSize: '0.8rem' }}
+                                    >
+                                        📱 WhatsApp
+                                    </a>
+                                )}
+                            </div>
                         </div>
                     ))
                 )}

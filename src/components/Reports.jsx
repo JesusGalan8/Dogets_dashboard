@@ -242,13 +242,13 @@ export default function Reports({ addToast, refreshData, onGoogleInit, googleSta
                                         <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{b.client?.dogName || '?'}</div>
                                         <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{b.checkIn} → {b.checkOut}</div>
                                     </div>
-                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 'var(--space-xs)' }}>
-                                        <span style={{ color: 'var(--amber-500)', fontWeight: 700 }}>{b.total}€</span>
-                                        <div style={{ display: 'flex', gap: 4 }}>
-                                            <button className="btn btn-sm" style={{ backgroundColor: '#00c3a5', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => handleMarkAsPaid(b, 'bizum')}>
+                                    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 'var(--space-xs)', minWidth: 180 }}>
+                                        <span style={{ color: 'var(--amber-500)', fontWeight: 700, alignSelf: 'flex-end' }}>{b.total}€</span>
+                                        <div style={{ display: 'flex', gap: 'var(--space-xs)', width: '100%' }}>
+                                            <button className="btn btn-sm" style={{ backgroundColor: '#00c3a5', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.85rem', flex: 1 }} onClick={() => handleMarkAsPaid(b, 'bizum')}>
                                                 📱 Bizum
                                             </button>
-                                            <button className="btn btn-sm" style={{ backgroundColor: '#fbbf24', color: '#78350f', border: 'none', padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => handleMarkAsPaid(b, 'efectivo')}>
+                                            <button className="btn btn-sm" style={{ backgroundColor: '#fbbf24', color: '#78350f', border: 'none', padding: '6px 12px', fontSize: '0.85rem', flex: 1 }} onClick={() => handleMarkAsPaid(b, 'efectivo')}>
                                                 💵 Efectivo
                                             </button>
                                         </div>
