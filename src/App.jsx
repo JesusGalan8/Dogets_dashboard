@@ -32,6 +32,31 @@ export default function App() {
     }, [])
 
     useEffect(() => {
+        const updateFavicon = () => {
+            const customLogo = localStorage.getItem('dogets_custom_logo')
+            if (customLogo) {
+                const icon = document.querySelector('link[rel="icon"]')
+                if (icon) icon.href = customLogo
+
+                const appleIcon = document.querySelector('link[rel="apple-touch-icon"]')
+                if (appleIcon) appleIcon.href = customLogo
+            } else {
+                // Restore defaults if removed
+                const base = import.meta.env.BASE_URL || '/'
+                const icon = document.querySelector('link[rel="icon"]')
+                if (icon) icon.href = `${base}dogets-icon.svg`
+
+                const appleIcon = document.querySelector('link[rel="apple-touch-icon"]')
+                if (appleIcon) appleIcon.href = `${base}logo.jpeg`
+            }
+        }
+        updateFavicon()
+        window.addEventListener('logo-updated', updateFavicon)
+
+        return () => window.removeEventListener('logo-updated', updateFavicon)
+    }, [])
+
+    useEffect(() => {
         setSidebarOpen(false)
     }, [location])
 
@@ -119,9 +144,10 @@ export default function App() {
     }
 
     if (isSyncing) {
+        const customLogo = localStorage.getItem('dogets_custom_logo') || `${import.meta.env.BASE_URL}logo.jpeg`
         return (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '1rem' }}>
-                <img src={`${import.meta.env.BASE_URL}logo.jpeg`} alt="Dogets" style={{ width: 80, height: 80, borderRadius: 'var(--radius-lg)' }} className="animate-pulse" />
+                <img src={customLogo} alt="Dogets" style={{ width: 80, height: 80, borderRadius: 'var(--radius-lg)', objectFit: 'cover' }} className="animate-pulse" />
                 <h2 style={{ color: 'var(--text-secondary)' }}>Sincronizando la nube...</h2>
             </div>
         )
