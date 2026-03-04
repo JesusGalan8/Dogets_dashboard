@@ -213,7 +213,7 @@ export default function Reports({ addToast, refreshData, onGoogleInit, googleSta
             </div>
 
             {/* Payment status + Export */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 'var(--space-lg)', marginBottom: 'var(--space-xl)' }}>
+            <div className="cards-grid" style={{ marginBottom: 'var(--space-xl)' }}>
                 <div className="card" style={{ padding: 'var(--space-lg)' }}>
                     <h3 style={{ fontSize: '1.1rem', marginBottom: 'var(--space-md)' }}>💳 Estado de pagos</h3>
                     <div style={{ display: 'flex', gap: 'var(--space-lg)', marginBottom: 'var(--space-md)' }}>
