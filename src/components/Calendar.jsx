@@ -132,8 +132,13 @@ export default function Calendar({ addToast, refreshData, googleStatus }) {
                         return (
                             <div
                                 key={i}
-                                className={`calendar-day ${day.otherMonth ? 'other-month' : ''} ${isToday(day.date) ? 'today' : ''}`}
-                                onClick={() => setSelectedDay(day.date)}
+                                className={`calendar-day ${day.otherMonth ? 'other-month' : ''} ${isToday(day.date) ? 'today' : ''} ${selectedDay && toLocalDateStr(selectedDay) === toLocalDateStr(day.date) ? 'selected' : ''}`}
+                                onClick={() => {
+                                    setSelectedDay(day.date)
+                                    if (!day.otherMonth) {
+                                        setShowBookingForm(true)
+                                    }
+                                }}
                             >
                                 <span className="day-number">{day.date.getDate()}</span>
                                 {events.slice(0, 3).map((ev, j) => (
@@ -153,6 +158,7 @@ export default function Calendar({ addToast, refreshData, googleStatus }) {
                                         +{events.length - 3} más
                                     </div>
                                 )}
+                                <span className="calendar-day-plus">+</span>
                             </div>
                         )
                     })}
