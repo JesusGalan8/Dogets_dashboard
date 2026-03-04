@@ -12,6 +12,8 @@ let gisInited = false;
 let tokenClient = null;
 let onStatusChange = null;
 
+const TOKEN_KEY = 'dogets_google_token';
+
 // Get stored Client ID
 export function getStoredClientId() {
     return localStorage.getItem('dogets_google_client_id') || '';
@@ -39,6 +41,17 @@ export async function initGapi() {
             discoveryDocs: [DISCOVERY_DOC],
         });
 
+        // Restore saved token from localStorage
+        const savedToken = localStorage.getItem(TOKEN_KEY);
+        if (savedToken) {
+            try {
+                const token = JSON.parse(savedToken);
+                window.gapi.client.setToken(token);
+            } catch (e) {
+                localStorage.removeItem(TOKEN_KEY);
+            }
+        }
+
         gapiInited = true;
         return true;
     } catch (e) {
@@ -60,8 +73,14 @@ export function initGis(statusCallback) {
         callback: (response) => {
             if (response.error) {
                 console.error('Token error:', response);
+                localStorage.removeItem(TOKEN_KEY);
                 onStatusChange?.('disconnected');
                 return;
+            }
+            // Save token for persistence across reloads
+            const token = window.gapi.client.getToken();
+            if (token) {
+                localStorage.setItem(TOKEN_KEY, JSON.stringify(token));
             }
             onStatusChange?.('connected');
         },
@@ -93,6 +112,7 @@ export function signOut() {
     if (token) {
         window.google.accounts.oauth2.revoke(token.access_token);
         window.gapi.client.setToken('');
+        localStorage.removeItem(TOKEN_KEY);
         onStatusChange?.('disconnected');
     }
 }
