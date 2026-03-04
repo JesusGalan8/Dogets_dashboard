@@ -10,6 +10,7 @@ import Toast from './components/Toast'
 import Login from './components/Login'
 import { requestNotificationPermission, startNotificationChecker } from './utils/notifications'
 import { initGapi, initGis, isConnected, signIn, signOut, getStoredClientId } from './utils/googleCalendar'
+import { initStorageSync } from './utils/storage'
 
 export default function App() {
     const [toasts, setToasts] = useState([])
@@ -17,6 +18,7 @@ export default function App() {
     const [dataVersion, setDataVersion] = useState(0)
     const [googleStatus, setGoogleStatus] = useState('no-key') // no-key, disconnected, connected
     const [isAuthenticated, setIsAuthenticated] = useState(localStorage.getItem('dogets_auth') === 'true')
+    const [isSyncing, setIsSyncing] = useState(true)
     const location = useLocation()
 
     useEffect(() => {
@@ -27,7 +29,12 @@ export default function App() {
         requestNotificationPermission()
         startNotificationChecker()
         initializeGoogle()
-    }, [])
+
+        initStorageSync(() => {
+            setIsSyncing(false)
+            refreshData()
+        })
+    }, [refreshData])
 
     const initializeGoogle = async () => {
         const clientId = getStoredClientId()
@@ -88,6 +95,15 @@ export default function App() {
                     ))}
                 </div>
             </>
+        )
+    }
+
+    if (isSyncing) {
+        return (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100vh', gap: '1rem' }}>
+                <img src={`${import.meta.env.BASE_URL}logo.jpeg`} alt="Dogets" style={{ width: 80, height: 80, borderRadius: 'var(--radius-lg)' }} className="animate-pulse" />
+                <h2 style={{ color: 'var(--text-secondary)' }}>Sincronizando la nube...</h2>
+            </div>
         )
     }
 

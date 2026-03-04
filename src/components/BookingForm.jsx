@@ -25,11 +25,12 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
     const nights = useMemo(() => {
         if (!form.checkIn || !form.checkOut) return 0
         const diff = new Date(form.checkOut + 'T00:00:00') - new Date(form.checkIn + 'T00:00:00')
-        return Math.max(0, Math.ceil(diff / 86400000))
+        return Math.floor(diff / 86400000)
     }, [form.checkIn, form.checkOut])
 
     const calcTotal = useMemo(() => {
-        const base = nights * form.rate
+        const units = Math.max(1, nights)
+        const base = units * form.rate
         const disc = Math.max(0, Math.min(100, parseFloat(form.discount) || 0))
         return Math.round(base * (1 - disc / 100) * 100) / 100
     }, [nights, form.rate, form.discount])
@@ -38,7 +39,7 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
 
     const handleSubmit = (e) => {
         e.preventDefault()
-        if (!form.clientId || !form.checkIn || !form.checkOut || nights <= 0) return
+        if (!form.clientId || !form.checkIn || !form.checkOut || nights < 0) return
         onSave({
             ...form,
             nights,
@@ -94,11 +95,11 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
                         </div>
 
                         {/* Price calculation */}
-                        {nights > 0 && (
+                        {nights >= 0 && (
                             <div className="pricing-summary">
                                 <div className="pricing-row">
-                                    <span>{nights} noche{nights !== 1 ? 's' : ''} × {form.rate}€</span>
-                                    <span>{nights * form.rate}€</span>
+                                    <span>{nights === 0 ? 'Guardería (Día)' : `${nights} noche${nights !== 1 ? 's' : ''}`} × {form.rate}€</span>
+                                    <span>{Math.max(1, nights) * form.rate}€</span>
                                 </div>
 
                                 {/* Manual discount field */}
@@ -120,7 +121,7 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
                                 {parseFloat(form.discount) > 0 && (
                                     <div className="pricing-row" style={{ color: 'var(--success)' }}>
                                         <span>Descuento {form.discount}%</span>
-                                        <span>-{Math.round(nights * form.rate * (form.discount / 100) * 100) / 100}€</span>
+                                        <span>-{Math.round(Math.max(1, nights) * form.rate * (form.discount / 100) * 100) / 100}€</span>
                                     </div>
                                 )}
 
@@ -187,7 +188,7 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
 
                     <div className="modal-footer">
                         <button type="button" className="btn btn-secondary" onClick={onClose}>Cancelar</button>
-                        <button type="submit" className="btn btn-primary" disabled={!form.clientId || nights <= 0}>
+                        <button type="submit" className="btn btn-primary" disabled={!form.clientId || nights < 0}>
                             {booking?.id ? 'Guardar cambios' : 'Crear reserva'}
                         </button>
                     </div>
