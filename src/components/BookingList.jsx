@@ -41,8 +41,8 @@ export default function BookingList({ addToast, refreshData, googleStatus }) {
     const handleSave = async (data) => {
         const savedBooking = saveBooking(data)
 
-        // Sync to Google Calendar if requested
-        if (data.syncGoogle && isConnected()) {
+        // Auto-sync to Google Calendar when connected
+        if (isConnected()) {
             const result = await createCalendarEvents(savedBooking || data)
             if (result) {
                 saveBooking({

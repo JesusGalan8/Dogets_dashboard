@@ -105,10 +105,23 @@ export async function createCalendarEvents(booking) {
     if (!client) return null;
 
     try {
+        const nights = booking.nights || 0;
+        const nightsLabel = nights === 0 ? 'Guardería (Día)' : `${nights} noche${nights !== 1 ? 's' : ''}`;
+        const paymentStatus = booking.paid ? '✅ PAGADO' : '⏳ PENDIENTE DE COBRO';
+
         // Create arrival event
         const arrivalEvent = {
-            summary: `🐕 Llegada: ${client.dogName}`,
-            description: `Dueño: ${client.ownerName}\nTeléfono: ${client.phone || 'N/A'}\nEmail: ${client.email || 'N/A'}\nRaza: ${client.breed || 'N/A'}\nTarifa: ${booking.rate}€/noche\nTotal: ${booking.total}€\n${booking.notes ? 'Notas: ' + booking.notes : ''}`,
+            summary: `🐕 ${client.dogName} — ${booking.total}€ ${booking.paid ? '✅' : '⏳'}`,
+            description: `🐕 LLEGADA: ${client.dogName}\n` +
+                `👤 Dueño: ${client.ownerName}\n` +
+                `📞 Teléfono: ${client.phone || 'N/A'}\n` +
+                `📧 Email: ${client.email || 'N/A'}\n` +
+                `🦴 Raza: ${client.breed || 'Mestizo'}\n` +
+                `\n💰 FACTURACIÓN:\n` +
+                `   ${nightsLabel} × ${booking.rate}€ = ${booking.total}€\n` +
+                (parseFloat(booking.discount) > 0 ? `   Descuento: ${booking.discount}%\n` : '') +
+                `   Estado: ${paymentStatus}\n` +
+                (booking.notes ? `\n📝 Notas: ${booking.notes}` : ''),
             start: { date: booking.checkIn },
             end: { date: booking.checkIn },
             reminders: {
@@ -128,8 +141,12 @@ export async function createCalendarEvents(booking) {
 
         // Create departure event
         const departureEvent = {
-            summary: `🏠 Salida: ${client.dogName}`,
-            description: `${client.ownerName} viene a recoger a ${client.dogName}\nTeléfono: ${client.phone || 'N/A'}`,
+            summary: `🏠 Salida: ${client.dogName} — Cobrar ${booking.total}€`,
+            description: `🏠 SALIDA: ${client.dogName}\n` +
+                `👤 ${client.ownerName} viene a recoger\n` +
+                `📞 Teléfono: ${client.phone || 'N/A'}\n` +
+                `\n💰 A COBRAR: ${booking.total}€\n` +
+                `   Estado: ${paymentStatus}`,
             start: { date: booking.checkOut },
             end: { date: booking.checkOut },
             reminders: {
