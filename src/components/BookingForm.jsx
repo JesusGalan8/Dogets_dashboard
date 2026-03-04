@@ -209,36 +209,44 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
                             </div>
                         )}
 
-                        {/* Payment */}
-                        <div className="form-group" style={{ marginTop: 'var(--space-md)' }}>
-                            <label className="form-label" style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', cursor: 'pointer' }}>
+                        <div className="form-section-title" style={{ marginTop: 'var(--space-lg)', color: 'var(--amber-500)' }}>💳 Cobro y Pagos</div>
+                        <div className="form-group" style={{
+                            marginTop: 'var(--space-xs)',
+                            background: form.paid ? 'rgba(34, 197, 94, 0.05)' : 'var(--bg-card)',
+                            border: `1px solid ${form.paid ? 'var(--success)' : 'var(--border-strong)'}`,
+                            padding: 'var(--space-md)',
+                            borderRadius: 'var(--radius-md)',
+                            transition: 'all var(--transition-fast)'
+                        }}>
+                            <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)', cursor: 'pointer', fontWeight: 600 }}>
                                 <input type="checkbox" name="paid" checked={form.paid} onChange={handleChange}
-                                    style={{ width: 20, height: 20, accentColor: 'var(--amber-500)' }} />
-                                <span>✅ Marcado como pagado</span>
-                                <span className={`badge ${form.paid ? 'badge-success' : 'badge-warning'}`}>
-                                    {form.paid ? 'Pagado' : 'Pendiente'}
+                                    style={{ width: 22, height: 22, accentColor: 'var(--success)' }} />
+                                <span style={{ fontSize: '1.05rem', color: form.paid ? 'var(--success)' : 'var(--text-primary)' }}>
+                                    {form.paid ? 'Reserva Pagada' : 'Marcar como Pagado'}
                                 </span>
                             </label>
 
                             {form.paid && (
                                 <div style={{
-                                    marginTop: 'var(--space-sm)',
-                                    paddingLeft: 'var(--space-xl)',
+                                    marginTop: 'var(--space-md)',
+                                    paddingTop: 'var(--space-md)',
+                                    borderTop: '1px solid rgba(34, 197, 94, 0.2)',
                                     display: 'flex',
-                                    gap: 'var(--space-md)'
+                                    gap: 'var(--space-lg)'
                                 }}>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer', fontSize: '0.9rem' }}>
+                                    <span style={{ fontSize: '0.85rem', color: 'var(--text-secondary)' }}>Método:</span>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer', fontSize: '1rem', fontWeight: form.paymentMethod === 'cash' ? 700 : 400 }}>
                                         <input type="radio" name="paymentMethod" value="cash"
                                             checked={form.paymentMethod === 'cash'}
                                             onChange={handleChange}
-                                            style={{ accentColor: 'var(--amber-500)' }} />
+                                            style={{ accentColor: 'var(--success)' }} />
                                         <span>💵 Efectivo</span>
                                     </label>
-                                    <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer', fontSize: '0.9rem' }}>
+                                    <label style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)', cursor: 'pointer', fontSize: '1rem', fontWeight: form.paymentMethod === 'bizum' ? 700 : 400 }}>
                                         <input type="radio" name="paymentMethod" value="bizum"
                                             checked={form.paymentMethod === 'bizum'}
                                             onChange={handleChange}
-                                            style={{ accentColor: 'var(--amber-500)' }} />
+                                            style={{ accentColor: 'var(--success)' }} />
                                         <span>📱 Bizum</span>
                                     </label>
                                 </div>
