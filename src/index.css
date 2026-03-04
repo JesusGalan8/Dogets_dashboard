@@ -1842,6 +1842,15 @@ code {
 
 
 
+    .calendar-container {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .calendar-grid {
+        min-width: 600px;
+    }
+
     .hide-on-mobile {
         display: none !important;
     }
