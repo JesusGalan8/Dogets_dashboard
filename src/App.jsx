@@ -137,7 +137,7 @@ export default function App() {
                     <Route path="/" element={<Dashboard key={dataVersion} addToast={addToast} refreshData={refreshData} />} />
                     <Route path="/clientes" element={<ClientList key={dataVersion} addToast={addToast} refreshData={refreshData} />} />
                     <Route path="/reservas" element={<BookingList key={dataVersion} addToast={addToast} refreshData={refreshData} googleStatus={googleStatus} />} />
-                    <Route path="/calendario" element={<Calendar key={dataVersion} addToast={addToast} refreshData={refreshData} />} />
+                    <Route path="/calendario" element={<Calendar key={dataVersion} addToast={addToast} refreshData={refreshData} googleStatus={googleStatus} />} />
                     <Route path="/informes" element={<Reports key={dataVersion} addToast={addToast} onGoogleInit={initializeGoogle} />} />
                 </Routes>
             </main>

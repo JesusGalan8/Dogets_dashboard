@@ -1,10 +1,12 @@
 import { useState, useMemo } from 'react'
-import { getBookings, getClientById } from '../utils/storage'
+import { getBookings, getClientById, saveBooking } from '../utils/storage'
 import { getDogColor } from '../utils/dogBreeds'
+import BookingForm from './BookingForm'
 
-export default function Calendar({ addToast }) {
+export default function Calendar({ addToast, refreshData, googleStatus }) {
     const [currentDate, setCurrentDate] = useState(new Date())
     const [selectedDay, setSelectedDay] = useState(null)
+    const [showBookingForm, setShowBookingForm] = useState(false)
 
     const year = currentDate.getFullYear()
     const month = currentDate.getMonth()
@@ -168,6 +170,9 @@ export default function Calendar({ addToast }) {
                                 : 'Selecciona un día para ver el detalle'
                             }
                         </h3>
+                        {selectedDay && (
+                            <button className="btn btn-primary btn-sm" onClick={() => setShowBookingForm(true)}>➕ Nueva Reserva</button>
+                        )}
                     </div>
 
                     {!selectedDay ? (
@@ -232,6 +237,20 @@ export default function Calendar({ addToast }) {
                     🔴 Salida
                 </div>
             </div>
+
+            {showBookingForm && selectedDay && (
+                <BookingForm
+                    booking={{ checkIn: toLocalDateStr(selectedDay) }}
+                    onSave={async (data) => {
+                        await saveBooking({ id: Date.now().toString(), ...data })
+                        if (refreshData) refreshData()
+                        setShowBookingForm(false)
+                        addToast(`Reserva creada para el ${toLocalDateStr(selectedDay)}`, 'success')
+                    }}
+                    onClose={() => setShowBookingForm(false)}
+                    googleStatus={googleStatus}
+                />
+            )}
         </div>
     )
 }

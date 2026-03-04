@@ -144,7 +144,7 @@ export default function Dashboard({ addToast, refreshData }) {
                                 </div>
 
                                 {/* Alerts (Maleta) */}
-                                {b.alerts && (
+                                {(b.alerts || b.photoUrl) && (
                                     <div style={{
                                         background: 'rgba(239, 68, 68, 0.1)',
                                         border: '1px solid rgba(239, 68, 68, 0.2)',
@@ -152,13 +152,32 @@ export default function Dashboard({ addToast, refreshData }) {
                                         padding: 'var(--space-sm) var(--space-md)',
                                         color: 'var(--danger)',
                                         display: 'flex',
-                                        alignItems: 'flex-start',
+                                        flexDirection: 'column',
                                         gap: 'var(--space-sm)'
                                     }}>
-                                        <span style={{ fontSize: '1.1rem' }}>🎒</span>
-                                        <div style={{ fontSize: '0.9rem', fontWeight: 500, whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
-                                            {b.alerts}
+                                        <div style={{ display: 'flex', alignItems: 'flex-start', gap: 'var(--space-sm)' }}>
+                                            <span style={{ fontSize: '1.1rem' }}>🎒</span>
+                                            <div style={{ fontSize: '0.9rem', fontWeight: 500, whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
+                                                {b.alerts || 'Maleta adjunta'}
+                                            </div>
                                         </div>
+                                        {b.photoUrl && (
+                                            <div style={{ marginTop: 'var(--space-xs)' }}>
+                                                <img
+                                                    src={b.photoUrl}
+                                                    alt="Foto de la maleta"
+                                                    onClick={() => window.open(b.photoUrl, '_blank')}
+                                                    style={{
+                                                        width: '100%',
+                                                        height: 140,
+                                                        objectFit: 'cover',
+                                                        borderRadius: 'var(--radius-sm)',
+                                                        border: '1px solid rgba(239, 68, 68, 0.3)',
+                                                        cursor: 'pointer'
+                                                    }}
+                                                />
+                                            </div>
+                                        )}
                                     </div>
                                 )}
 

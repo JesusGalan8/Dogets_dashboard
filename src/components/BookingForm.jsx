@@ -1,5 +1,7 @@
-import { useState, useMemo, useEffect } from 'react'
+import { useState, useMemo, useRef } from 'react'
 import { getClients } from '../utils/storage'
+import { storage } from '../utils/firebase'
+import { ref, uploadString, getDownloadURL } from 'firebase/storage'
 
 export default function BookingForm({ booking, onSave, onClose, googleStatus }) {
     const clients = useMemo(() => getClients(), [])
@@ -11,6 +13,7 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
         paid: false,
         notes: '',
         alerts: '',
+        photoUrl: '',
         discount: 0,
         customTotal: '',
         useCustomTotal: false,
@@ -18,9 +21,56 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
         ...booking,
     })
 
+    const [isUploading, setIsUploading] = useState(false)
+    const fileInputRef = useRef(null)
+
     const handleChange = (e) => {
         const { name, value, type, checked } = e.target
         setForm(prev => ({ ...prev, [name]: type === 'checkbox' ? checked : value }))
+    }
+
+    const handlePhotoUpload = async (e) => {
+        const file = e.target.files[0]
+        if (!file) return
+
+        setIsUploading(true)
+        try {
+            // Compress image on the client (Canvas to WebP) to save bandwidth & space
+            const image = new Image()
+            image.src = URL.createObjectURL(file)
+            await new Promise((resolve) => { image.onload = resolve })
+
+            const canvas = document.createElement('canvas')
+            let { width, height } = image
+            const MAX_SIZE = 800
+            if (width > height && width > MAX_SIZE) {
+                height *= MAX_SIZE / width
+                width = MAX_SIZE
+            } else if (height > MAX_SIZE) {
+                width *= MAX_SIZE / height
+                height = MAX_SIZE
+            }
+            canvas.width = width
+            canvas.height = height
+
+            const ctx = canvas.getContext('2d')
+            ctx.drawImage(image, 0, 0, width, height)
+            const webpDataUrl = canvas.toDataURL('image/webp', 0.8)
+
+            // Upload to Firebase Storage
+            const fileName = `maletas/photo_${Date.now()}_${Math.floor(Math.random() * 1000)}.webp`
+            const storageRef = ref(storage, fileName)
+            await uploadString(storageRef, webpDataUrl, 'data_url')
+
+            const downloadUrl = await getDownloadURL(storageRef)
+            setForm(prev => ({ ...prev, photoUrl: downloadUrl }))
+        } catch (error) {
+            console.error("Error uploading photo:", error)
+            alert("Error al subir la foto. Comprueba tu conexión.")
+        } finally {
+            setIsUploading(false)
+            if (fileInputRef.current) fileInputRef.current.value = ''
+        }
     }
 
     const nights = useMemo(() => {
@@ -185,6 +235,26 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
                             <textarea className="form-input" name="alerts" value={form.alerts} onChange={handleChange}
                                 placeholder="Ej: Alergia al pollo, medicación a las 20:00, trae su propia cama..." rows={2}
                                 style={{ borderColor: form.alerts ? 'var(--danger)' : 'var(--border-default)', background: form.alerts ? 'rgba(239, 68, 68, 0.05)' : '' }} />
+
+                            <div style={{ marginTop: 'var(--space-sm)' }}>
+                                <input type="file" accept="image/*" capture="environment" ref={fileInputRef} onChange={handlePhotoUpload} style={{ display: 'none' }} />
+
+                                {form.photoUrl ? (
+                                    <div style={{ position: 'relative', display: 'inline-block', marginTop: 'var(--space-sm)' }}>
+                                        <img src={form.photoUrl} alt="Maleta" style={{ width: 100, height: 100, objectFit: 'cover', borderRadius: 'var(--radius-md)', border: '2px solid var(--border-default)' }} />
+                                        <button type="button" onClick={() => setForm(prev => ({ ...prev, photoUrl: '' }))}
+                                            style={{ position: 'absolute', top: -8, right: -8, background: 'var(--danger)', color: 'white', border: 'none', borderRadius: '50%', width: 24, height: 24, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                                            ✕
+                                        </button>
+                                    </div>
+                                ) : (
+                                    <button type="button" className="btn btn-secondary w-full" onClick={() => fileInputRef.current.click()} disabled={isUploading}
+                                        style={{ justifyContent: 'center', gap: 'var(--space-sm)', borderStyle: 'dashed' }}>
+                                        <span style={{ fontSize: '1.2rem' }}>📷</span>
+                                        {isUploading ? 'Fotografiando / Subiendo...' : 'Añadir Foto de la Maleta'}
+                                    </button>
+                                )}
+                            </div>
                         </div>
 
                         <div className="form-group" style={{ marginTop: 'var(--space-md)' }}>
