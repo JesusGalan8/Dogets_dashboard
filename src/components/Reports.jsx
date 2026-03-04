@@ -4,7 +4,7 @@ import { exportFutureBookingsICS } from '../utils/icsExport'
 import { exportClientsCSV, exportBookingsCSV } from '../utils/csvExport'
 import { getStoredClientId, setStoredClientId, initGapi, initGis } from '../utils/googleCalendar'
 
-export default function Reports({ addToast, onGoogleInit }) {
+export default function Reports({ addToast, onGoogleInit, googleStatus, onGoogleConnect, onGoogleDisconnect, deferredPrompt, clearPrompt }) {
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
     const [showGoogleSettings, setShowGoogleSettings] = useState(false)
     const [clientId, setClientId] = useState(getStoredClientId())
@@ -109,6 +109,27 @@ export default function Reports({ addToast, onGoogleInit }) {
                     <button className="btn btn-secondary" onClick={() => setShowGoogleSettings(true)}>⚙️ Ajustes</button>
                 </div>
             </div>
+
+            {deferredPrompt && (
+                <div className="card" style={{ padding: 'var(--space-md) var(--space-lg)', marginBottom: 'var(--space-lg)', border: '1px solid var(--amber-500)', background: 'rgba(232, 135, 14, 0.05)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 'var(--space-md)', flexWrap: 'wrap' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                        <span style={{ fontSize: '1.8rem' }}>📱</span>
+                        <div>
+                            <h3 style={{ fontSize: '1rem', marginBottom: 2 }}>Instalar App Nativa</h3>
+                            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: 0 }}>Instala Dogets en tu pantalla de inicio para acceso más rápido y pantalla completa.</p>
+                        </div>
+                    </div>
+                    <button className="btn btn-primary" onClick={async () => {
+                        deferredPrompt.prompt()
+                        const { outcome } = await deferredPrompt.userChoice
+                        if (outcome === 'accepted') {
+                            clearPrompt()
+                        }
+                    }}>
+                        Instalar App
+                    </button>
+                </div>
+            )}
 
             <div className="stats-grid stagger">
                 <div className="stat-card">
@@ -227,9 +248,27 @@ export default function Reports({ addToast, onGoogleInit }) {
                                     <br />1. Ve a <a href="https://console.cloud.google.com" target="_blank" rel="noopener" style={{ color: 'var(--amber-500)' }}>Google Cloud Console</a>
                                     <br />2. Crea un proyecto y activa la API de Google Calendar
                                     <br />3. En Credenciales → OAuth 2.0 → Crear credencial web
-                                    <br />4. Añade <code>http://localhost:5173</code> como origen autorizado
+                                    <br />4. Añade <code>http://localhost:5173</code> o tu dominio real como origen autorizado
                                     <br />5. Copia el Client ID aquí
                                 </p>
+                            </div>
+
+                            <div className="form-group" style={{ marginTop: 'var(--space-xs)' }}>
+                                {googleStatus === 'connected' ? (
+                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-elevated)', padding: 'var(--space-sm) var(--space-md)', borderRadius: 'var(--radius-md)' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+                                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)' }} />
+                                            <span style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600 }}>Conectado</span>
+                                        </div>
+                                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--text-secondary)' }} onClick={() => { onGoogleDisconnect(); setShowGoogleSettings(false); }}>
+                                            Desconectar
+                                        </button>
+                                    </div>
+                                ) : googleStatus === 'disconnected' ? (
+                                    <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => { onGoogleConnect(); setShowGoogleSettings(false); }}>
+                                        Conectar a Google Calendar
+                                    </button>
+                                ) : null}
                             </div>
 
                             <div className="form-section-title" style={{ marginTop: 'var(--space-lg)' }}>🐕 Negocio</div>
