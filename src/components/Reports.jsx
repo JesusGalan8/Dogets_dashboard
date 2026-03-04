@@ -66,6 +66,15 @@ export default function Reports({ addToast, refreshData, onGoogleInit, googleSta
         return yearBookings.filter(b => !b.paid).map(b => ({ ...b, client: getClientById(b.clientId) }))
     }, [yearBookings])
 
+    const recentPaidBookings = useMemo(() => {
+        // Last 5 paid bookings for the undo feature
+        return yearBookings
+            .filter(b => b.paid)
+            .sort((a, b) => new Date(b.checkOut) - new Date(a.checkOut))
+            .slice(0, 5)
+            .map(b => ({ ...b, client: getClientById(b.clientId) }))
+    }, [yearBookings])
+
     const handleSaveGoogleSettings = () => {
         setStoredClientId(clientId)
         localStorage.setItem('dogets_max_capacity', maxCapacity)
@@ -106,8 +115,19 @@ export default function Reports({ addToast, refreshData, onGoogleInit, googleSta
         addToast(`Cobro de ${booking.total}€ registrado (${method})`, 'success')
         refreshData && refreshData()
 
-        // Force immediate local reload by clearing bookings memo dependency or just refreshData
-        // (refreshData from App will change dataVersion and force unmount/remount of this component)
+        // Force update if needed
+    }
+
+    const handleUndoPayment = async (booking) => {
+        const originalNotes = booking.notes ? booking.notes.replace(/\n\[Cobrado por.*\]$/g, '') : ''
+        const updates = {
+            paid: false,
+            paymentMethod: null,
+            notes: originalNotes
+        }
+        await saveBooking({ ...booking, ...updates })
+        addToast(`Cobro de ${booking.total}€ deshecho`, 'info')
+        refreshData && refreshData()
     }
 
     return (
@@ -225,11 +245,11 @@ export default function Reports({ addToast, refreshData, onGoogleInit, googleSta
                                     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 'var(--space-xs)' }}>
                                         <span style={{ color: 'var(--amber-500)', fontWeight: 700 }}>{b.total}€</span>
                                         <div style={{ display: 'flex', gap: 4 }}>
-                                            <button className="btn btn-sm" style={{ backgroundColor: '#00c3a5', color: 'white', border: 'none', padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => handleMarkAsPaid(b, 'bizum')}>
-                                                Bizum
+                                            <button className="btn btn-sm" style={{ backgroundColor: '#00c3a5', color: 'white', border: 'none', padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => handleMarkAsPaid(b, 'bizum')}>
+                                                📱 Bizum
                                             </button>
-                                            <button className="btn btn-sm" style={{ backgroundColor: '#fbbf24', color: '#78350f', border: 'none', padding: '2px 8px', fontSize: '0.7rem' }} onClick={() => handleMarkAsPaid(b, 'efectivo')}>
-                                                Efectivo
+                                            <button className="btn btn-sm" style={{ backgroundColor: '#fbbf24', color: '#78350f', border: 'none', padding: '6px 12px', fontSize: '0.85rem' }} onClick={() => handleMarkAsPaid(b, 'efectivo')}>
+                                                💵 Efectivo
                                             </button>
                                         </div>
                                     </div>
@@ -237,9 +257,31 @@ export default function Reports({ addToast, refreshData, onGoogleInit, googleSta
                             ))}
                         </div>
                     )}
+
+                    {recentPaidBookings.length > 0 && (
+                        <div style={{ marginTop: 'var(--space-lg)', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-default)' }}>
+                            <h4 style={{ fontSize: '0.9rem', color: 'var(--text-muted)', marginBottom: 'var(--space-sm)' }}>Últimos cobros (para deshacer)</h4>
+                            <div style={{ maxHeight: 150, overflowY: 'auto' }}>
+                                {recentPaidBookings.map(b => (
+                                    <div key={b.id} className="booking-row" style={{ padding: 'var(--space-sm)', opacity: 0.8 }}>
+                                        <div style={{ flex: 1 }}>
+                                            <div style={{ fontWeight: 600, fontSize: '0.9rem' }}>{b.client?.dogName || '?'}</div>
+                                            <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>{b.paymentMethod === 'bizum' ? 'Bizum' : 'Efectivo'}</div>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 'var(--space-md)', alignItems: 'center' }}>
+                                            <span style={{ color: 'var(--success)', fontWeight: 700 }}>{b.total}€</span>
+                                            <button className="btn btn-sm btn-ghost" style={{ padding: '4px 8px', color: 'var(--danger)' }} onClick={() => handleUndoPayment(b)}>
+                                                ↩️ Deshacer
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    )}
                 </div>
 
-                <div className="card" style={{ padding: 'var(--space-lg)' }}>
+                <div className="card hide-on-mobile" style={{ padding: 'var(--space-lg)' }}>
                     <h3 style={{ fontSize: '1.1rem', marginBottom: 'var(--space-md)' }}>📤 Exportar datos</h3>
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                         <button className="btn btn-secondary" onClick={() => { exportClientsCSV(); addToast('Clientes exportados a CSV', 'success') }}>
