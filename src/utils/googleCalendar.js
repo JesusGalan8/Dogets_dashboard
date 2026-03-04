@@ -137,11 +137,12 @@ export async function createCalendarEvents(booking) {
                 `📞 Teléfono: ${client.phone || 'N/A'}\n` +
                 `📧 Email: ${client.email || 'N/A'}\n` +
                 `🦴 Raza: ${client.breed || 'Mestizo'}\n` +
+                (booking.alerts ? `\n🎒 AVISOS / MALETA:\n   ${booking.alerts.replace(/\n/g, '\n   ')}\n` : '') +
                 `\n💰 FACTURACIÓN:\n` +
                 `   ${nightsLabel} × ${booking.rate}€ = ${booking.total}€\n` +
                 (parseFloat(booking.discount) > 0 ? `   Descuento: ${booking.discount}%\n` : '') +
                 `   Estado: ${paymentStatus}\n` +
-                (booking.notes ? `\n📝 Notas: ${booking.notes}` : ''),
+                (booking.notes ? `\n📝 Notas Internas: ${booking.notes}` : ''),
             start: { date: booking.checkIn },
             end: { date: booking.checkIn },
             reminders: {

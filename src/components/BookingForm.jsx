@@ -10,6 +10,7 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
         rate: 15,
         paid: false,
         notes: '',
+        alerts: '',
         discount: 0,
         customTotal: '',
         useCustomTotal: false,
@@ -180,9 +181,16 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
                         )}
 
                         <div className="form-group">
-                            <label className="form-label">Notas</label>
-                            <textarea className="form-textarea" name="notes" value={form.notes} onChange={handleChange}
-                                placeholder="Observaciones sobre la reserva..." rows={2} />
+                            <label className="form-label" style={{ color: 'var(--danger)', fontWeight: 600 }}>🎒 Avisos / Maleta (Opcional)</label>
+                            <textarea className="form-input" name="alerts" value={form.alerts} onChange={handleChange}
+                                placeholder="Ej: Alergia al pollo, medicación a las 20:00, trae su propia cama..." rows={2}
+                                style={{ borderColor: form.alerts ? 'var(--danger)' : 'var(--border-default)', background: form.alerts ? 'rgba(239, 68, 68, 0.05)' : '' }} />
+                        </div>
+
+                        <div className="form-group" style={{ marginTop: 'var(--space-md)' }}>
+                            <label className="form-label">📝 Notas Internas</label>
+                            <textarea className="form-input" name="notes" value={form.notes} onChange={handleChange}
+                                placeholder="Observaciones de facturación o internas..." rows={2} />
                         </div>
                     </div>
 

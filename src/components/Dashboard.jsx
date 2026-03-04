@@ -56,10 +56,18 @@ export default function Dashboard({ addToast, refreshData }) {
         setStats(getStats())
     }
 
-    const handleCheckOut = (booking) => {
-        saveBooking({ ...booking, checkedOut: new Date().toISOString(), client: undefined })
+    const handleCheckOut = (booking, paymentMethod = null) => {
+        const updates = { checkedOut: new Date().toISOString(), client: undefined }
+        if (paymentMethod) {
+            updates.paid = true
+            updates.notes = booking.notes
+                ? `${booking.notes}\n[Cobrado por ${paymentMethod}]`
+                : `[Cobrado por ${paymentMethod}]`
+        }
+
+        saveBooking({ ...booking, ...updates })
         refreshData()
-        addToast(`🏠 ${booking.client?.dogName} se ha ido`, 'success')
+        addToast(`🏠 ${booking.client?.dogName} se ha ido${paymentMethod ? ` (Cobrado por ${paymentMethod})` : ''}`, 'success')
         setActiveBookings(getActiveBookings().map(b => ({ ...b, client: getClientById(b.clientId) })))
         setStats(getStats())
     }
@@ -119,29 +127,81 @@ export default function Dashboard({ addToast, refreshData }) {
                         No hay perros hospedados actualmente
                     </div>
                 ) : (
-                    activeBookings.map(b => (
-                        <div key={b.id} className="booking-row">
-                            <DogAvatar breed={b.client?.breed} dogId={b.clientId} size={40} />
-                            <div className="booking-dog-name">{b.client?.dogName || 'Desconocido'}</div>
-                            <div className="booking-dates">
-                                {formatDate(b.checkIn)} → {formatDate(b.checkOut)}
-                            </div>
-                            <span className="badge badge-success">Hospedado</span>
-                            <div className="booking-price">{b.total}€</div>
-                            <div style={{ display: 'flex', gap: 4 }}>
-                                {!b.checkedIn && (
-                                    <button className="btn btn-primary btn-sm" onClick={() => handleCheckIn(b)} title="Marcar llegada">
-                                        ✅ Check-in
-                                    </button>
+                    <div className="dog-cards-grid">
+                        {activeBookings.map(b => (
+                            <div key={b.id} className="card" style={{ padding: 'var(--space-lg)', display: 'flex', flexDirection: 'column', gap: 'var(--space-md)', position: 'relative', overflow: 'hidden' }}>
+                                {/* Header: Dog Info */}
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-md)' }}>
+                                    <DogAvatar breed={b.client?.breed} dogId={b.clientId} size={56} />
+                                    <div>
+                                        <h3 style={{ fontSize: '1.25rem', margin: 0 }}>{b.client?.dogName || 'Desconocido'}</h3>
+                                        <div style={{ color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: 2 }}>{b.client?.breed}</div>
+                                    </div>
+                                    <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
+                                        <span className="badge badge-success" style={{ marginBottom: 4, display: 'inline-block' }}>Hospedado</span>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Sale el {formatDate(b.checkOut)}</div>
+                                    </div>
+                                </div>
+
+                                {/* Alerts (Maleta) */}
+                                {b.alerts && (
+                                    <div style={{
+                                        background: 'rgba(239, 68, 68, 0.1)',
+                                        border: '1px solid rgba(239, 68, 68, 0.2)',
+                                        borderRadius: 'var(--radius-md)',
+                                        padding: 'var(--space-sm) var(--space-md)',
+                                        color: 'var(--danger)',
+                                        display: 'flex',
+                                        alignItems: 'flex-start',
+                                        gap: 'var(--space-sm)'
+                                    }}>
+                                        <span style={{ fontSize: '1.1rem' }}>🎒</span>
+                                        <div style={{ fontSize: '0.9rem', fontWeight: 500, whiteSpace: 'pre-wrap', lineHeight: 1.4 }}>
+                                            {b.alerts}
+                                        </div>
+                                    </div>
                                 )}
-                                {b.checkedIn && !b.checkedOut && (
-                                    <button className="btn btn-secondary btn-sm" onClick={() => handleCheckOut(b)} title="Marcar salida">
-                                        🏠 Check-out
-                                    </button>
+
+                                {/* WhatsApp Quick Action */}
+                                {b.client?.phone && (
+                                    <a
+                                        href={`https://wa.me/34${b.client.phone.replace(/\s/g, '')}?text=${encodeURIComponent(`¡Hola ${b.client.ownerName}! 🐾 Todo genial por aquí con ${b.client.dogName} hoy. ¡Te mando foto!`)}`}
+                                        target="_blank"
+                                        rel="noopener"
+                                        className="btn btn-secondary w-full"
+                                        style={{ backgroundColor: '#25D366', color: 'white', borderColor: '#25D366', justifyContent: 'center', gap: 'var(--space-sm)' }}
+                                    >
+                                        <span style={{ fontSize: '1.2rem' }}>📱</span>
+                                        <span>Enviar foto de hoy a {b.client.ownerName}</span>
+                                    </a>
                                 )}
+
+                                {/* Card Footer: Check-in/out info */}
+                                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 'auto', paddingTop: 'var(--space-md)', borderTop: '1px solid var(--border-default)' }}>
+                                    <div style={{ display: 'flex', gap: 'var(--space-sm)', flexWrap: 'wrap', flex: 1 }}>
+                                        {!b.checkedIn && (
+                                            <button className="btn btn-primary btn-sm" onClick={() => handleCheckIn(b)}>✅ Marcar Llegada</button>
+                                        )}
+                                        {b.checkedIn && !b.checkedOut && (
+                                            b.paid ? (
+                                                <button className="btn btn-secondary btn-sm" onClick={() => handleCheckOut(b)}>🏠 Check-out (Ya pagado)</button>
+                                            ) : (
+                                                <div style={{ display: 'flex', gap: 4, width: '100%' }}>
+                                                    <button className="btn btn-sm" style={{ backgroundColor: '#00c3a5', color: 'white', border: 'none', flex: 1 }} onClick={() => handleCheckOut(b, 'Bizum')}>
+                                                        💸 Bizum
+                                                    </button>
+                                                    <button className="btn btn-sm" style={{ backgroundColor: '#fbbf24', color: '#78350f', border: 'none', flex: 1 }} onClick={() => handleCheckOut(b, 'Efectivo')}>
+                                                        💵 Efectivo
+                                                    </button>
+                                                </div>
+                                            )
+                                        )}
+                                    </div>
+                                    <div style={{ fontWeight: 600, color: 'var(--text-primary)', marginLeft: 'var(--space-md)', fontSize: '1.1rem' }}>{b.total}€</div>
+                                </div>
                             </div>
-                        </div>
-                    ))
+                        ))}
+                    </div>
                 )}
             </div>
 
