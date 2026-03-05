@@ -10,6 +10,7 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
         checkIn: '',
         checkInTime: '',
         checkOut: '',
+        checkOutTime: '',
         rate: 15,
         paid: false,
         paymentMethod: booking?.paymentMethod || 'cash',
@@ -134,7 +135,10 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
                             </div>
                             <div className="form-group">
                                 <label className="form-label">Salida *</label>
-                                <input className="form-input" type="date" name="checkOut" value={form.checkOut} onChange={handleChange} required />
+                                <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+                                    <input className="form-input" type="date" name="checkOut" value={form.checkOut} onChange={handleChange} required style={{ flex: 1 }} />
+                                    <input className="form-input" type="time" name="checkOutTime" value={form.checkOutTime || ''} onChange={handleChange} title="Hora de salida" style={{ width: 100 }} />
+                                </div>
                             </div>
                         </div>
 

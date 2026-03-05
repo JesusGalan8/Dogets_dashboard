@@ -57,8 +57,23 @@ export default function Dashboard({ addToast, refreshData }) {
                 }
             })
 
-            // Check Custom Tasks
+            // Check Custom Tasks and Checkouts (Active Bookings)
             activeBookings.forEach(b => {
+                // Check Checkout
+                if (b.checkOutTime === currentHHMM && b.checkOut && b.checkOut.startsWith(today) && !b.checkedOut) {
+                    const alarmKey = `checkout_${b.id}_${today}`
+                    if (!newAlarms.alarms?.[alarmKey]) {
+                        addToast(`⏰ ¡Hora de recogida para ${b.client?.dogName}!`, 'warning')
+                        if (Notification.permission === 'granted') {
+                            new Notification('Salida de perro', { body: `Es la hora de salida de ${b.client?.dogName}` })
+                        }
+                        if (!newAlarms.alarms) newAlarms.alarms = {}
+                        newAlarms.alarms[alarmKey] = true
+                        changedAlarms = true
+                    }
+                }
+
+                // Check Tasks
                 if (b.customTasks && b.customTasks.length > 0) {
                     b.customTasks.forEach(task => {
                         if (task.time === currentHHMM && !isTaskDone(b.clientId, task.id)) {
@@ -119,7 +134,7 @@ export default function Dashboard({ addToast, refreshData }) {
         const checkInDate = new Date().toISOString()
 
         // Optimistic update
-        setActiveBookings(prev => [{ ...booking, checkedIn: checkInDate }, ...prev])
+        setActiveBookings(prev => prev.map(b => b.id === booking.id ? { ...b, checkedIn: checkInDate } : b))
         setUpcomingBookings(prev => prev.filter(b => b.id !== booking.id))
 
         addToast(`✅ ${booking.client?.dogName} ha llegado`, 'success')
@@ -225,8 +240,8 @@ export default function Dashboard({ addToast, refreshData }) {
                     <h2 style={{ fontSize: '1.2rem', marginBottom: 'var(--space-md)' }}>📝 Panel de Cuidados Diarios</h2>
 
                     <div className="cards-grid">
-                        {activeBookings.map(b => (
-                            <div key={`care-${b.id}`} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                        {Array.from(new Map(activeBookings.map(b => [b.clientId, b])).values()).map(b => (
+                            <div key={`care-${b.clientId}`} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
                                     <DogAvatar breed={b.client?.breed} dogId={b.clientId} size={48} />
                                     <div style={{ flex: 1 }}>
@@ -382,7 +397,9 @@ export default function Dashboard({ addToast, refreshData }) {
                                     </div>
                                     <div style={{ marginLeft: 'auto', textAlign: 'right' }}>
                                         <span className="badge badge-success" style={{ marginBottom: 4, display: 'inline-block' }}>Hospedado</span>
-                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Sale el {formatDate(b.checkOut)}</div>
+                                        <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>
+                                            Sale el {formatDate(b.checkOut)} {b.checkOutTime && <span>(a las {b.checkOutTime})</span>}
+                                        </div>
                                     </div>
                                 </div>
 
