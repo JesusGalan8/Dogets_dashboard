@@ -10,6 +10,8 @@ export default function Dashboard({ addToast, refreshData }) {
     const [activeBookings, setActiveBookings] = useState([])
     const [upcomingBookings, setUpcomingBookings] = useState([])
     const [checklist, setChecklist] = useState({})
+    const [newTaskInputs, setNewTaskInputs] = useState({})
+    const [notifiedAlarms, setNotifiedAlarms] = useState({}) // Keep track of fired alarms today
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -17,7 +19,72 @@ export default function Dashboard({ addToast, refreshData }) {
         setActiveBookings(getActiveBookings().map(b => ({ ...b, client: getClientById(b.clientId) })))
         setUpcomingBookings(getUpcomingBookings(7).map(b => ({ ...b, client: getClientById(b.clientId) })))
         loadChecklist()
+
+        // Reset notified alarms if it's a new day
+        const storedNotified = JSON.parse(localStorage.getItem('dogets_notified_alarms') || '{}')
+        const today = new Date().toISOString().split('T')[0]
+        if (storedNotified.date !== today) {
+            setNotifiedAlarms({ date: today, alarms: {} })
+            localStorage.setItem('dogets_notified_alarms', JSON.stringify({ date: today, alarms: {} }))
+        } else {
+            setNotifiedAlarms(storedNotified)
+        }
     }, [])
+
+    // Alarms Loop
+    useEffect(() => {
+        const interval = setInterval(() => {
+            const now = new Date()
+            const currentHHMM = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0')
+            const today = now.toISOString().split('T')[0]
+
+            let changedAlarms = false
+            const newAlarms = { ...notifiedAlarms }
+
+            // Check Arrivals
+            upcomingBookings.forEach(b => {
+                if (b.checkInTime === currentHHMM && b.checkIn && b.checkIn.startsWith(today)) {
+                    const alarmKey = `arrival_${b.id}_${today}`
+                    if (!newAlarms.alarms?.[alarmKey]) {
+                        addToast(`⏰ ¡Hora de llegada para ${b.client?.dogName}!`, 'warning')
+                        if (Notification.permission === 'granted') {
+                            new Notification('Llegada de perro', { body: `Es la hora de llegada programada para ${b.client?.dogName}` })
+                        }
+                        if (!newAlarms.alarms) newAlarms.alarms = {}
+                        newAlarms.alarms[alarmKey] = true
+                        changedAlarms = true
+                    }
+                }
+            })
+
+            // Check Custom Tasks
+            activeBookings.forEach(b => {
+                if (b.customTasks && b.customTasks.length > 0) {
+                    b.customTasks.forEach(task => {
+                        if (task.time === currentHHMM && !isTaskDone(b.clientId, task.id)) {
+                            const alarmKey = `task_${task.id}_${today}`
+                            if (!newAlarms.alarms?.[alarmKey]) {
+                                addToast(`⏰ ¡Tarea pendiente para ${b.client?.dogName}: ${task.text}!`, 'warning')
+                                if (Notification.permission === 'granted') {
+                                    new Notification('Aviso de Cuidados', { body: `Pendiente para ${b.client?.dogName}: ${task.text}` })
+                                }
+                                if (!newAlarms.alarms) newAlarms.alarms = {}
+                                newAlarms.alarms[alarmKey] = true
+                                changedAlarms = true
+                            }
+                        }
+                    })
+                }
+            })
+
+            if (changedAlarms) {
+                setNotifiedAlarms(newAlarms)
+                localStorage.setItem('dogets_notified_alarms', JSON.stringify(newAlarms))
+            }
+        }, 30000) // Check every 30 seconds
+
+        return () => clearInterval(interval)
+    }, [upcomingBookings, activeBookings, checklist, notifiedAlarms, addToast])
 
     const loadChecklist = () => {
         const today = new Date().toISOString().split('T')[0]
@@ -48,12 +115,48 @@ export default function Dashboard({ addToast, refreshData }) {
     const occupancyPct = Math.min(100, Math.round((stats.activeBookings / MAX_CAPACITY) * 100))
     const occupancyColor = occupancyPct >= 100 ? 'var(--danger)' : occupancyPct >= 80 ? 'var(--warning)' : 'var(--success)'
 
-    const handleCheckIn = (booking) => {
-        saveBooking({ ...booking, checkedIn: new Date().toISOString(), client: undefined })
-        refreshData()
+    const handleCheckIn = async (booking) => {
+        const checkInDate = new Date().toISOString()
+
+        // Optimistic update
+        setActiveBookings(prev => [{ ...booking, checkedIn: checkInDate }, ...prev])
+        setUpcomingBookings(prev => prev.filter(b => b.id !== booking.id))
+
         addToast(`✅ ${booking.client?.dogName} ha llegado`, 'success')
-        setActiveBookings(getActiveBookings().map(b => ({ ...b, client: getClientById(b.clientId) })))
+
+        await saveBooking({ ...booking, checkedIn: checkInDate, client: undefined })
+        refreshData()
         setStats(getStats())
+    }
+
+    const addCustomTask = async (booking) => {
+        const input = newTaskInputs[booking.id]
+        if (!input || !input.text) return
+
+        const newTask = {
+            id: Date.now().toString(),
+            text: input.text,
+            time: input.time || ''
+        }
+
+        const updatedTasks = [...(booking.customTasks || []), newTask]
+        const updatedBooking = { ...booking, customTasks: updatedTasks }
+
+        // Optimistic UI for activeBookings
+        setActiveBookings(prev => prev.map(b => b.id === booking.id ? updatedBooking : b))
+        setNewTaskInputs(prev => ({ ...prev, [booking.id]: { text: '', time: '' } }))
+
+        // Fire & forget save to DB
+        await saveBooking({ ...updatedBooking, client: undefined })
+    }
+
+    const removeCustomTask = async (booking, taskId) => {
+        if (!confirm("¿Eliminar esta tarea de forma permanente?")) return
+        const updatedTasks = booking.customTasks.filter(t => t.id !== taskId)
+        const updatedBooking = { ...booking, customTasks: updatedTasks }
+
+        setActiveBookings(prev => prev.map(b => b.id === booking.id ? updatedBooking : b))
+        await saveBooking({ ...updatedBooking, client: undefined })
     }
 
     const handleCheckOut = (booking, paymentMethod = null) => {
@@ -173,6 +276,69 @@ export default function Dashboard({ addToast, refreshData }) {
                                             </span>
                                         </label>
                                     ))}
+
+                                    {/* Custom Editable Tasks */}
+                                    {b.customTasks && b.customTasks.map(task => (
+                                        <div key={task.id} className="checklist-item" style={{
+                                            display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
+                                            padding: '8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                                            background: isTaskDone(b.clientId, task.id) ? 'rgba(34, 197, 94, 0.1)' : 'var(--bg-card-hover)',
+                                            border: `1px solid ${isTaskDone(b.clientId, task.id) ? 'rgba(34, 197, 94, 0.3)' : 'var(--border-default)'}`
+                                        }}>
+                                            <input
+                                                type="checkbox"
+                                                checked={isTaskDone(b.clientId, task.id)}
+                                                onChange={() => toggleTask(b.clientId, task.id)}
+                                                style={{ width: 22, height: 22, accentColor: 'var(--amber-500)', cursor: 'pointer' }}
+                                            />
+                                            <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                <span style={{
+                                                    fontSize: '0.95rem',
+                                                    textDecoration: isTaskDone(b.clientId, task.id) ? 'line-through' : 'none',
+                                                    color: isTaskDone(b.clientId, task.id) ? 'var(--text-muted)' : 'var(--text-primary)'
+                                                }}>
+                                                    {task.text}
+                                                </span>
+                                                {task.time && (
+                                                    <span className="badge" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--warning)', fontSize: '0.75rem', padding: '2px 6px' }}>
+                                                        ⏰ {task.time}
+                                                    </span>
+                                                )}
+                                            </div>
+                                            <button type="button" onClick={() => removeCustomTask(b, task.id)} style={{ background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: '4px', opacity: 0.6 }} title="Eliminar tarea">
+                                                ✕
+                                            </button>
+                                        </div>
+                                    ))}
+
+                                    {/* Add Custom Task Input */}
+                                    <div style={{ display: 'flex', gap: '4px', marginTop: '4px' }}>
+                                        <input
+                                            type="text"
+                                            placeholder="Añadir pastilla, cura..."
+                                            className="form-input"
+                                            style={{ flex: 1, fontSize: '0.85rem', padding: '6px' }}
+                                            value={newTaskInputs[b.id]?.text || ''}
+                                            onChange={(e) => setNewTaskInputs(prev => ({ ...prev, [b.id]: { ...prev[b.id], text: e.target.value } }))}
+                                            onKeyDown={(e) => e.key === 'Enter' && addCustomTask(b)}
+                                        />
+                                        <input
+                                            type="time"
+                                            className="form-input"
+                                            style={{ width: '85px', fontSize: '0.85rem', padding: '6px' }}
+                                            value={newTaskInputs[b.id]?.time || ''}
+                                            onChange={(e) => setNewTaskInputs(prev => ({ ...prev, [b.id]: { ...prev[b.id], time: e.target.value } }))}
+                                            title="Alarma opcional"
+                                        />
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            style={{ padding: '0 10px' }}
+                                            onClick={() => addCustomTask(b)}
+                                            disabled={!newTaskInputs[b.id]?.text}
+                                        >
+                                            +
+                                        </button>
+                                    </div>
                                 </div>
 
                                 {/* Send Video Action */}
@@ -304,7 +470,9 @@ export default function Dashboard({ addToast, refreshData }) {
                                 <DogAvatar breed={b.client?.breed} dogId={b.clientId} size={44} />
                                 <div>
                                     <div className="booking-dog-name">{b.client?.dogName || 'Desconocido'}</div>
-                                    <div className="booking-dates" style={{ marginTop: 2 }}>Llega: {formatDate(b.checkIn)}</div>
+                                    <div className="booking-dates" style={{ marginTop: 2 }}>
+                                        Llega: {formatDate(b.checkIn)} {b.checkInTime && <span style={{ color: 'var(--warning)', fontWeight: 600 }}> a las {b.checkInTime}</span>}
+                                    </div>
                                 </div>
                             </div>
                             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 'var(--space-xs)' }}>

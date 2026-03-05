@@ -8,6 +8,7 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
     const [form, setForm] = useState({
         clientId: '',
         checkIn: '',
+        checkInTime: '',
         checkOut: '',
         rate: 15,
         paid: false,
@@ -39,7 +40,10 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
             // Compress image on the client (Canvas to WebP) to save bandwidth & space
             const image = new Image()
             image.src = URL.createObjectURL(file)
-            await new Promise((resolve) => { image.onload = resolve })
+            await new Promise((resolve, reject) => {
+                image.onload = resolve;
+                image.onerror = () => reject(new Error("Formato de imagen no soportado por el navegador"));
+            })
 
             const canvas = document.createElement('canvas')
             let { width, height } = image
@@ -122,11 +126,14 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
 
                         <div className="form-row">
                             <div className="form-group">
-                                <label className="form-label">Fecha entrada *</label>
-                                <input className="form-input" type="date" name="checkIn" value={form.checkIn} onChange={handleChange} required />
+                                <label className="form-label">Entrada *</label>
+                                <div style={{ display: 'flex', gap: 'var(--space-xs)' }}>
+                                    <input className="form-input" type="date" name="checkIn" value={form.checkIn} onChange={handleChange} required style={{ flex: 1 }} />
+                                    <input className="form-input" type="time" name="checkInTime" value={form.checkInTime || ''} onChange={handleChange} title="Hora de llegada" style={{ width: 100 }} />
+                                </div>
                             </div>
                             <div className="form-group">
-                                <label className="form-label">Fecha salida *</label>
+                                <label className="form-label">Salida *</label>
                                 <input className="form-input" type="date" name="checkOut" value={form.checkOut} onChange={handleChange} required />
                             </div>
                         </div>
