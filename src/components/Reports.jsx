@@ -67,9 +67,12 @@ export default function Reports({ addToast, refreshData, onGoogleInit, googleSta
     }, [yearBookings])
 
     const recentPaidBookings = useMemo(() => {
-        // Last 5 paid bookings for the undo feature
+        // Last 5 paid bookings for the undo feature, filtering out payments older than 5 days
+        const fiveDaysAgo = new Date();
+        fiveDaysAgo.setDate(fiveDaysAgo.getDate() - 5);
+
         return yearBookings
-            .filter(b => b.paid)
+            .filter(b => b.paid && b.checkOut && new Date(b.checkOut) >= fiveDaysAgo)
             .sort((a, b) => new Date(b.checkOut) - new Date(a.checkOut))
             .slice(0, 5)
             .map(b => ({ ...b, client: getClientById(b.clientId) }))

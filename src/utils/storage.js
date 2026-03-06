@@ -93,9 +93,12 @@ export async function saveClient(clientData) {
     }
     clientData.updatedAt = new Date().toISOString();
 
+    // Strip undefined values before saving to Firestore
+    const cleanData = Object.fromEntries(Object.entries(clientData).filter(([_, v]) => v !== undefined));
+
     // Write to Firestore (the listener will update localClients)
-    await setDoc(doc(db, "clients", clientData.id), clientData);
-    return clientData;
+    await setDoc(doc(db, "clients", cleanData.id), cleanData);
+    return cleanData;
 }
 
 export async function deleteClient(id) {
@@ -129,8 +132,11 @@ export async function saveBooking(bookingData) {
     }
     bookingData.updatedAt = new Date().toISOString();
 
-    await setDoc(doc(db, "bookings", bookingData.id), bookingData);
-    return bookingData;
+    // Strip undefined values before saving to Firestore
+    const cleanData = Object.fromEntries(Object.entries(bookingData).filter(([_, v]) => v !== undefined));
+
+    await setDoc(doc(db, "bookings", cleanData.id), cleanData);
+    return cleanData;
 }
 
 export async function deleteBooking(id) {

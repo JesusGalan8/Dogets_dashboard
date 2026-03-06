@@ -12,6 +12,8 @@ export default function Dashboard({ addToast, refreshData }) {
     const [checklist, setChecklist] = useState({})
     const [newTaskInputs, setNewTaskInputs] = useState({})
     const [notifiedAlarms, setNotifiedAlarms] = useState({}) // Keep track of fired alarms today
+    const [medModalClient, setMedModalClient] = useState(null)
+    const [medForm, setMedForm] = useState({ name: '', startDate: '', endDate: '', times: '' })
     const navigate = useNavigate()
 
     useEffect(() => {
@@ -258,12 +260,12 @@ export default function Dashboard({ addToast, refreshData }) {
             </div>
 
             {/* Daily Care Dashboard (Replaces old tasks table) */}
-            {activeBookings.length > 0 && (
+            {activeBookings.filter(b => b.checkedIn).length > 0 && (
                 <div style={{ marginBottom: 'var(--space-xl)' }}>
                     <h2 style={{ fontSize: '1.2rem', marginBottom: 'var(--space-md)' }}>📝 Panel de Cuidados Diarios</h2>
 
                     <div className="cards-grid">
-                        {Array.from(new Map(activeBookings.map(b => [b.clientId, b])).values()).map(b => (
+                        {Array.from(new Map(activeBookings.filter(b => b.checkedIn).map(b => [b.clientId, b])).values()).map(b => (
                             <div key={`care-${b.clientId}`} className="card" style={{ padding: 'var(--space-md)', display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                                 <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
                                     <DogAvatar breed={b.client?.breed} dogId={b.clientId} size={48} />
@@ -417,6 +419,20 @@ export default function Dashboard({ addToast, refreshData }) {
                                             disabled={!newTaskInputs[b.id]?.text}
                                         >
                                             +
+                                        </button>
+                                    </div>
+
+                                    {/* Action Buttons for Client/Medication */}
+                                    <div style={{ display: 'flex', gap: 'var(--space-sm)', marginTop: 'var(--space-xs)' }}>
+                                        <button
+                                            className="btn btn-secondary btn-sm"
+                                            style={{ flex: 1, backgroundColor: 'rgba(239, 68, 68, 0.05)', color: 'var(--danger)', borderColor: 'rgba(239, 68, 68, 0.2)' }}
+                                            onClick={() => {
+                                                setMedModalClient(b.client);
+                                                setMedForm({ name: '', startDate: new Date().toISOString().split('T')[0], endDate: '', times: '' });
+                                            }}
+                                        >
+                                            💊 Pautar Medicación
                                         </button>
                                     </div>
                                 </div>
@@ -577,6 +593,61 @@ export default function Dashboard({ addToast, refreshData }) {
                     ))
                 )}
             </div>
+
+            {/* Modal de Medicación */}
+            {medModalClient && (
+                <div className="modal-overlay" onClick={(e) => e.target === e.currentTarget && setMedModalClient(null)}>
+                    <div className="modal">
+                        <div className="modal-header">
+                            <h3 className="modal-title">💊 Pautar Medicación para {medModalClient.dogName}</h3>
+                            <button className="modal-close" onClick={() => setMedModalClient(null)}>✕</button>
+                        </div>
+                        <div className="modal-body">
+                            <div className="form-group">
+                                <label className="form-label">Medicamento / Título</label>
+                                <input className="form-input" value={medForm.name} onChange={e => setMedForm({ ...medForm, name: e.target.value })} placeholder="Ej: Amoxicilina 500mg" autoFocus />
+                            </div>
+                            <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label className="form-label">Desde</label>
+                                    <input type="date" className="form-input" value={medForm.startDate} onChange={e => setMedForm({ ...medForm, startDate: e.target.value })} />
+                                </div>
+                                <div className="form-group" style={{ flex: 1 }}>
+                                    <label className="form-label">Hasta</label>
+                                    <input type="date" className="form-input" value={medForm.endDate} onChange={e => setMedForm({ ...medForm, endDate: e.target.value })} />
+                                </div>
+                            </div>
+                            <div className="form-group">
+                                <label className="form-label">Horas (separadas por coma)</label>
+                                <input type="text" className="form-input" value={medForm.times} onChange={e => setMedForm({ ...medForm, times: e.target.value })} placeholder="Ej: 08:00, 20:00" />
+                                <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: 4 }}>Saltará una alarma a estas horas exactas.</div>
+                            </div>
+                        </div>
+                        <div className="modal-footer">
+                            <button className="btn btn-secondary" onClick={() => setMedModalClient(null)}>Cancelar</button>
+                            <button className="btn btn-primary" onClick={async () => {
+                                if (!medForm.name || !medForm.startDate || !medForm.endDate) {
+                                    alert('Rellena al menos el título y las fechas de inicio y fin.');
+                                    return;
+                                }
+                                const updatedClient = {
+                                    ...medModalClient,
+                                    medications: [...(medModalClient.medications || []), { id: Date.now().toString(), ...medForm }]
+                                };
+                                import('../utils/storage').then(({ saveClient }) => {
+                                    saveClient(updatedClient).then(() => {
+                                        addToast(`Pauta médica añadida a ${medModalClient.dogName}`, 'success');
+                                        setMedModalClient(null);
+                                        refreshData();
+                                        // Update local active bookings optimistically
+                                        setActiveBookings(prev => prev.map(b => b.clientId === updatedClient.id ? { ...b, client: updatedClient } : b));
+                                    });
+                                });
+                            }}>Guardar Pauta</button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
