@@ -11,6 +11,7 @@ export default function ClientForm({ client, onSave, onClose }) {
         email: '',
         allergies: '',
         vaccines: '',
+        medications: [],
         notes: '',
         feedingNotes: '',
         behaviorTags: '',
@@ -106,6 +107,65 @@ export default function ClientForm({ client, onSave, onClose }) {
                         <div className="form-group">
                             <label className="form-label">Alergias (separar con comas)</label>
                             <input className="form-input" name="allergies" value={form.allergies} onChange={handleChange} placeholder="Ej: Pollo, Maíz" />
+                        </div>
+
+                        {/* MEDICATIONS SECTION */}
+                        <div className="form-group" style={{ background: 'var(--bg-elevated)', padding: 'var(--space-md)', borderRadius: 'var(--radius-md)' }}>
+                            <label className="form-label" style={{ marginBottom: 'var(--space-sm)', display: 'block', fontSize: '1rem', fontWeight: 600 }}>Pautas de Medicación</label>
+
+                            {form.medications?.length > 0 && (
+                                <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)', marginBottom: 'var(--space-md)' }}>
+                                    {form.medications.map((med, idx) => (
+                                        <div key={idx} style={{ background: 'var(--bg-card)', padding: 'var(--space-sm)', borderRadius: 'var(--radius-sm)', position: 'relative', border: '1px solid var(--border-default)' }}>
+                                            <button
+                                                type="button"
+                                                onClick={() => setForm(prev => ({ ...prev, medications: prev.medications.filter((_, i) => i !== idx) }))}
+                                                style={{ position: 'absolute', top: 4, right: 4, background: 'none', border: 'none', color: 'var(--danger)', cursor: 'pointer', padding: 4 }}
+                                                title="Eliminar medicación"
+                                            >✕</button>
+                                            <div style={{ fontWeight: 600, color: 'var(--primary)' }}>{med.name}</div>
+                                            <div style={{ fontSize: '0.85rem', color: 'var(--text-muted)' }}>Del {new Date(med.startDate).toLocaleDateString()} al {new Date(med.endDate).toLocaleDateString()}</div>
+                                            {med.times && <div style={{ fontSize: '0.85rem' }}>⏰ Horas: {med.times}</div>}
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
+                                <input id="newMedName" type="text" className="form-input" placeholder="Nombre del medicamento" />
+                                <div style={{ display: 'flex', gap: 'var(--space-sm)' }}>
+                                    <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Inicio</label>
+                                        <input id="newMedStart" type="date" className="form-input" />
+                                    </div>
+                                    <div style={{ flex: 1 }}>
+                                        <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Fin</label>
+                                        <input id="newMedEnd" type="date" className="form-input" />
+                                    </div>
+                                </div>
+                                <div>
+                                    <label style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>Horario (Opcional, separadas por coma)</label>
+                                    <input id="newMedTimes" type="text" className="form-input" placeholder="Ej: 08:00, 20:00" />
+                                </div>
+                                <button type="button" className="btn btn-secondary btn-sm" onClick={() => {
+                                    const name = document.getElementById('newMedName').value;
+                                    const startDate = document.getElementById('newMedStart').value;
+                                    const endDate = document.getElementById('newMedEnd').value;
+                                    const times = document.getElementById('newMedTimes').value;
+                                    if (!name || !startDate || !endDate) {
+                                        alert('Rellena nombre, fecha inicio y fecha fin para el medicamento.');
+                                        return;
+                                    }
+                                    setForm(prev => ({
+                                        ...prev,
+                                        medications: [...(prev.medications || []), { id: Date.now().toString(), name, startDate, endDate, times }]
+                                    }));
+                                    document.getElementById('newMedName').value = '';
+                                    document.getElementById('newMedStart').value = '';
+                                    document.getElementById('newMedEnd').value = '';
+                                    document.getElementById('newMedTimes').value = '';
+                                }}>+ Añadir pauta médica</button>
+                            </div>
                         </div>
 
                         <div className="form-section-title">🦴 Comportamiento y Alimentación</div>

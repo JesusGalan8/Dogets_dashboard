@@ -90,6 +90,29 @@ export default function Dashboard({ addToast, refreshData }) {
                         }
                     })
                 }
+
+                // Check Medications
+                if (b.client?.medications && b.client.medications.length > 0) {
+                    b.client.medications.forEach(med => {
+                        if (today >= med.startDate && today <= med.endDate && med.times) {
+                            const times = med.times.split(',').map(t => t.trim());
+                            times.forEach(time => {
+                                if (time === currentHHMM && !isTaskDone(b.clientId, `med_${med.id}_${time}`)) {
+                                    const alarmKey = `med_${med.id}_${time}_${today}`
+                                    if (!newAlarms.alarms?.[alarmKey]) {
+                                        addToast(`💊 ¡Medicación pendiente para ${b.client?.dogName}: ${med.name}!`, 'danger')
+                                        if (Notification.permission === 'granted') {
+                                            new Notification('Aviso de Medicación', { body: `Toca darle ${med.name} a ${b.client?.dogName}` })
+                                        }
+                                        if (!newAlarms.alarms) newAlarms.alarms = {}
+                                        newAlarms.alarms[alarmKey] = true
+                                        changedAlarms = true
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }
             })
 
             if (changedAlarms) {
@@ -291,6 +314,48 @@ export default function Dashboard({ addToast, refreshData }) {
                                             </span>
                                         </label>
                                     ))}
+
+                                    {/* Medications for Today */}
+                                    {b.client?.medications && b.client.medications.map(med => {
+                                        const todayStr = new Date().toISOString().split('T')[0];
+                                        if (todayStr >= med.startDate && todayStr <= med.endDate) {
+                                            const times = med.times ? med.times.split(',').map(t => t.trim()) : [''];
+                                            return times.map((t, idx) => {
+                                                const taskId = `med_${med.id}${t ? `_${t}` : ''}`;
+                                                return (
+                                                    <label key={`${taskId}-${idx}`} className="checklist-item" style={{
+                                                        display: 'flex', alignItems: 'center', gap: 'var(--space-sm)',
+                                                        padding: '8px', borderRadius: 'var(--radius-sm)', cursor: 'pointer',
+                                                        background: isTaskDone(b.clientId, taskId) ? 'rgba(34, 197, 94, 0.1)' : 'rgba(239, 68, 68, 0.05)',
+                                                        border: `1px solid ${isTaskDone(b.clientId, taskId) ? 'rgba(34, 197, 94, 0.3)' : 'rgba(239, 68, 68, 0.2)'}`
+                                                    }}>
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={isTaskDone(b.clientId, taskId)}
+                                                            onChange={() => toggleTask(b.clientId, taskId)}
+                                                            style={{ width: 22, height: 22, accentColor: 'var(--danger)', cursor: 'pointer' }}
+                                                        />
+                                                        <div style={{ flex: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                                            <span style={{
+                                                                fontSize: '0.95rem',
+                                                                fontWeight: 600,
+                                                                textDecoration: isTaskDone(b.clientId, taskId) ? 'line-through' : 'none',
+                                                                color: isTaskDone(b.clientId, taskId) ? 'var(--text-muted)' : 'var(--danger)'
+                                                            }}>
+                                                                💊 {med.name}
+                                                            </span>
+                                                            {t && (
+                                                                <span className="badge" style={{ backgroundColor: 'var(--bg-elevated)', color: 'var(--danger)', fontSize: '0.75rem', padding: '2px 6px' }}>
+                                                                    ⏰ {t}
+                                                                </span>
+                                                            )}
+                                                        </div>
+                                                    </label>
+                                                )
+                                            })
+                                        }
+                                        return null;
+                                    })}
 
                                     {/* Custom Editable Tasks */}
                                     {b.customTasks && b.customTasks.map(task => (

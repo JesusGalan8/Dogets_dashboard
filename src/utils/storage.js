@@ -146,10 +146,14 @@ export function getActiveBookings() {
     const now = new Date();
     now.setHours(0, 0, 0, 0);
     return localBookings.filter(b => {
+        if (b.checkedOut) return false;
+        if (b.checkedIn) return true; // Already here
+
         const checkIn = new Date(b.checkIn);
         const checkOut = new Date(b.checkOut);
         checkIn.setHours(0, 0, 0, 0);
         checkOut.setHours(0, 0, 0, 0);
+
         return checkIn <= now && checkOut >= now;
     });
 }
@@ -160,9 +164,11 @@ export function getUpcomingBookings(days = 7) {
     const future = new Date(now);
     future.setDate(future.getDate() + days);
     return localBookings.filter(b => {
+        if (b.checkedIn || b.checkedOut) return false;
+
         const checkIn = new Date(b.checkIn);
         checkIn.setHours(0, 0, 0, 0);
-        return checkIn > now && checkIn <= future;
+        return checkIn >= now && checkIn <= future;
     }).sort((a, b) => new Date(a.checkIn) - new Date(b.checkIn));
 }
 
