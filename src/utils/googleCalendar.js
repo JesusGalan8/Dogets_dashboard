@@ -2,7 +2,7 @@
 // Dogets - Google Calendar Integration
 // ============================================
 
-import { getClientById } from './storage';
+import { getClientById, saveBooking } from './storage';
 
 const SCOPES = 'https://www.googleapis.com/auth/calendar.events';
 const DISCOVERY_DOC = 'https://www.googleapis.com/discovery/v1/apis/calendar/v3/rest';
@@ -96,11 +96,12 @@ export function isConnected() {
 }
 
 // Sign in
-export function signIn() {
+export function signIn(silent = false) {
     if (!tokenClient) return;
+    localStorage.setItem('dogets_wants_google', 'true');
 
     if (window.gapi.client.getToken() === null) {
-        tokenClient.requestAccessToken({ prompt: 'consent' });
+        tokenClient.requestAccessToken(silent ? { prompt: '' } : { prompt: 'consent' });
     } else {
         tokenClient.requestAccessToken({ prompt: '' });
     }
@@ -109,6 +110,7 @@ export function signIn() {
 // Sign out
 export function signOut() {
     const token = window.gapi?.client?.getToken();
+    localStorage.removeItem('dogets_wants_google');
     if (token) {
         window.google.accounts.oauth2.revoke(token.access_token);
         window.gapi.client.setToken('');
@@ -214,4 +216,48 @@ export async function deleteCalendarEvents(booking) {
     } catch (e) {
         console.warn('Error deleting calendar events:', e);
     }
+}
+
+// Sincronización masiva de reservas pendientes
+export async function syncMissingBookings(bookings, onProgress) {
+    if (!isConnected()) return { success: false, msg: 'No conectado a Google Calendar' };
+
+    let syncedCount = 0;
+    let skippedCount = 0;
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < bookings.length; i++) {
+        const b = bookings[i];
+        
+        // Ignorar reservas pasadas (la fecha de salida ya pasó)
+        const checkOutDate = new Date(b.checkOut + 'T00:00:00');
+        if (checkOutDate < now) {
+            continue; 
+        }
+
+        // Si ya está asignada a Google, o si explícitamente se guardó con syncGoogle = false (aunque por defecto es true)
+        if (b.googleArrivalEventId || b.googleDepartureEventId || b.syncGoogle === false) {
+            skippedCount++;
+            continue;
+        }
+
+        if (onProgress) onProgress(i, bookings.length, b);
+
+        try {
+            const eventIds = await createCalendarEvents(b);
+            if (eventIds) {
+                b.googleArrivalEventId = eventIds.arrivalEventId;
+                b.googleDepartureEventId = eventIds.departureEventId;
+                b.syncGoogle = true;
+                await saveBooking(b);
+                syncedCount++;
+            }
+        } catch (e) {
+            console.error("Failed to sync booking", b, e);
+        }
+    }
+
+    return { success: true, syncedCount, skippedCount };
 }

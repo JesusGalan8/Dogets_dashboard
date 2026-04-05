@@ -7,6 +7,7 @@ export default function Calendar({ addToast, refreshData, googleStatus }) {
     const [currentDate, setCurrentDate] = useState(new Date())
     const [selectedDay, setSelectedDay] = useState(null)
     const [showBookingForm, setShowBookingForm] = useState(false)
+    const [editingBooking, setEditingBooking] = useState(null)
 
     const year = currentDate.getFullYear()
     const month = currentDate.getMonth()
@@ -135,9 +136,6 @@ export default function Calendar({ addToast, refreshData, googleStatus }) {
                                 className={`calendar-day ${day.otherMonth ? 'other-month' : ''} ${isToday(day.date) ? 'today' : ''} ${selectedDay && toLocalDateStr(selectedDay) === toLocalDateStr(day.date) ? 'selected' : ''}`}
                                 onClick={() => {
                                     setSelectedDay(day.date)
-                                    if (!day.otherMonth) {
-                                        setShowBookingForm(true)
-                                    }
                                 }}
                             >
                                 <span className="day-number">{day.date.getDate()}</span>
@@ -158,7 +156,14 @@ export default function Calendar({ addToast, refreshData, googleStatus }) {
                                         +{events.length - 3} más
                                     </div>
                                 )}
-                                <span className="calendar-day-plus">+</span>
+                                <span className="calendar-day-plus" onClick={(e) => {
+                                    e.stopPropagation();
+                                    setSelectedDay(day.date);
+                                    if (!day.otherMonth) {
+                                        setEditingBooking(null);
+                                        setShowBookingForm(true);
+                                    }
+                                }}>+</span>
                             </div>
                         )
                     })}
@@ -177,7 +182,7 @@ export default function Calendar({ addToast, refreshData, googleStatus }) {
                             }
                         </h3>
                         {selectedDay && (
-                            <button className="btn btn-primary btn-sm" onClick={() => setShowBookingForm(true)}>➕ Nueva Reserva</button>
+                            <button className="btn btn-primary btn-sm" onClick={() => { setEditingBooking(null); setShowBookingForm(true); }}>➕ Nueva Reserva</button>
                         )}
                     </div>
 
@@ -188,7 +193,12 @@ export default function Calendar({ addToast, refreshData, googleStatus }) {
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-sm)' }}>
                             {selectedDayEvents.map((ev, i) => (
-                                <div key={i} className="booking-row" style={{ borderLeft: `4px solid ${ev.color.border}` }}>
+                                <div key={i} className="booking-row" style={{ borderLeft: `4px solid ${ev.color.border}`, cursor: 'pointer' }}
+                                    onClick={() => {
+                                        setEditingBooking(ev.booking);
+                                        setShowBookingForm(true);
+                                    }}
+                                >
                                     <span style={{ fontSize: '1.2rem' }}>
                                         {ev.type === 'arrival' ? '🟢' : ev.type === 'departure' ? '🔴' : '🔵'}
                                     </span>
@@ -246,14 +256,18 @@ export default function Calendar({ addToast, refreshData, googleStatus }) {
 
             {showBookingForm && selectedDay && (
                 <BookingForm
-                    booking={{ checkIn: toLocalDateStr(selectedDay) }}
+                    booking={editingBooking || { checkIn: toLocalDateStr(selectedDay) }}
                     onSave={async (data) => {
-                        await saveBooking({ id: Date.now().toString(), ...data })
+                        await saveBooking(data)
                         if (refreshData) refreshData()
                         setShowBookingForm(false)
-                        addToast(`Reserva creada para el ${toLocalDateStr(selectedDay)}`, 'success')
+                        setEditingBooking(null)
+                        addToast(data.id ? `Reserva ${editingBooking ? 'actualizada' : 'creada'} correctamente` : `Reserva creada`, 'success')
                     }}
-                    onClose={() => setShowBookingForm(false)}
+                    onClose={() => {
+                        setShowBookingForm(false)
+                        setEditingBooking(null)
+                    }}
                     googleStatus={googleStatus}
                 />
             )}

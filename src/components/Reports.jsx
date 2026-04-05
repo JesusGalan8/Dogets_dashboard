@@ -2,7 +2,7 @@ import { useState, useMemo } from 'react'
 import { getBookings, getClients, getClientById, getMonthlyRevenue, saveBooking } from '../utils/storage'
 import { exportFutureBookingsICS } from '../utils/icsExport'
 import { exportClientsCSV, exportBookingsCSV } from '../utils/csvExport'
-import { getStoredClientId, setStoredClientId, initGapi, initGis } from '../utils/googleCalendar'
+import { getStoredClientId, setStoredClientId, initGapi, initGis, syncMissingBookings } from '../utils/googleCalendar'
 
 export default function Reports({ addToast, refreshData, onGoogleInit, googleStatus, onGoogleConnect, onGoogleDisconnect, deferredPrompt, clearPrompt }) {
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear())
@@ -10,6 +10,7 @@ export default function Reports({ addToast, refreshData, onGoogleInit, googleSta
     const [clientId, setClientId] = useState(getStoredClientId())
     const [maxCapacity, setMaxCapacity] = useState(localStorage.getItem('dogets_max_capacity') || '10')
     const [customLogo, setCustomLogo] = useState(localStorage.getItem('dogets_custom_logo') || '')
+    const [isSyncingGoogle, setIsSyncingGoogle] = useState(false)
 
     const bookings = useMemo(() => getBookings(), [selectedYear])
 
@@ -131,6 +132,28 @@ export default function Reports({ addToast, refreshData, onGoogleInit, googleSta
         await saveBooking({ ...booking, ...updates })
         addToast(`Cobro de ${booking.total}€ deshecho`, 'info')
         refreshData && refreshData()
+    }
+
+    const handleForceGoogleSync = async () => {
+        setIsSyncingGoogle(true);
+        try {
+            const allBookings = getBookings(); // All current localized inside storage.js
+            const result = await syncMissingBookings(allBookings);
+            if (result.success) {
+                if (result.syncedCount === 0) {
+                    addToast(`Todo al día. ${result.skippedCount} reservas ignoradas o ya sincronizadas.`, 'info');
+                } else {
+                    addToast(`¡Éxito! ${result.syncedCount} reservas creadas en Calendar. ${result.skippedCount} estaban al día.`, 'success');
+                    if (refreshData) refreshData();
+                }
+            } else {
+                addToast(result.msg || 'Error al conectar a Google Calendar', 'error');
+            }
+        } catch(e) {
+            console.error(e);
+            addToast('Error al sincronizar el calendario masivamente', 'error');
+        }
+        setIsSyncingGoogle(false);
     }
 
     return (
@@ -326,15 +349,21 @@ export default function Reports({ addToast, refreshData, onGoogleInit, googleSta
 
                             <div className="form-group" style={{ marginTop: 'var(--space-xs)' }}>
                                 {googleStatus === 'connected' ? (
-                                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-elevated)', padding: 'var(--space-sm) var(--space-md)', borderRadius: 'var(--radius-md)' }}>
-                                        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
-                                            <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)' }} />
-                                            <span style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600 }}>Conectado</span>
+                                    <>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: 'var(--bg-elevated)', padding: 'var(--space-sm) var(--space-md)', borderRadius: 'var(--radius-md)' }}>
+                                            <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-xs)' }}>
+                                                <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--success)' }} />
+                                                <span style={{ fontSize: '0.85rem', color: 'var(--success)', fontWeight: 600 }}>Conectado</span>
+                                            </div>
+                                            <button className="btn btn-ghost btn-sm" style={{ color: 'var(--text-secondary)' }} onClick={() => { onGoogleDisconnect(); setShowGoogleSettings(false); }}>
+                                                Desconectar
+                                            </button>
                                         </div>
-                                        <button className="btn btn-ghost btn-sm" style={{ color: 'var(--text-secondary)' }} onClick={() => { onGoogleDisconnect(); setShowGoogleSettings(false); }}>
-                                            Desconectar
+                                        <button className="btn btn-primary" style={{ width: '100%', marginTop: 'var(--space-sm)' }} 
+                                                onClick={handleForceGoogleSync} disabled={isSyncingGoogle}>
+                                            {isSyncingGoogle ? 'Sincronizando silenciosamente...' : '🔄 Forzar Sincronización de Pendientes'}
                                         </button>
-                                    </div>
+                                    </>
                                 ) : googleStatus === 'disconnected' ? (
                                     <button className="btn btn-primary" style={{ width: '100%' }} onClick={() => { onGoogleConnect(); setShowGoogleSettings(false); }}>
                                         Conectar a Google Calendar

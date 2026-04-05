@@ -74,8 +74,12 @@ export default function Sidebar({ isOpen, onClose, googleStatus, onGoogleConnect
                                     Configura tu Client ID de Google en Informes → Ajustes
                                 </p>
                             ) : (
-                                <button className="btn btn-primary btn-sm" style={{ width: '100%', fontSize: '0.78rem' }} onClick={onGoogleConnect}>
-                                    Conectar
+                                <button 
+                                    className="btn" 
+                                    style={{ width: '100%', fontSize: '0.85rem', padding: '10px 0', backgroundColor: localStorage.getItem('dogets_wants_google') === 'true' ? 'var(--danger)' : 'var(--amber-500)', color: 'white', border: 'none', fontWeight: 600 }} 
+                                    onClick={onGoogleConnect}
+                                >
+                                    {localStorage.getItem('dogets_wants_google') === 'true' ? '⚠️ Reconectar Google (Sesión caducada)' : '🔗 Conectar Google'}
                                 </button>
                             )}
                         </div>

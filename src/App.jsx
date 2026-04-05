@@ -93,7 +93,15 @@ export default function App() {
             initGis((status) => {
                 setGoogleStatus(status)
             })
-            setGoogleStatus(isConnected() ? 'connected' : 'disconnected')
+            
+            const connected = isConnected();
+            setGoogleStatus(connected ? 'connected' : 'disconnected')
+
+            // Auto-reconnect if it dropped
+            if (!connected && localStorage.getItem('dogets_wants_google') === 'true') {
+                 console.log("Attempting silent Google reconnection...");
+                 signIn(true);
+            }
         } else {
             setGoogleStatus('disconnected')
         }
