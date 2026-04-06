@@ -82,7 +82,7 @@ export default function BookingForm({ booking, onSave, onClose, googleStatus }) 
     const nights = useMemo(() => {
         if (!form.checkIn || !form.checkOut) return 0
         const diff = new Date(form.checkOut + 'T00:00:00') - new Date(form.checkIn + 'T00:00:00')
-        return Math.floor(diff / 86400000)
+        return Math.round(diff / 86400000)
     }, [form.checkIn, form.checkOut])
 
     const calcTotal = useMemo(() => {

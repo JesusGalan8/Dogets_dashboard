@@ -182,7 +182,7 @@ export function calculateBookingTotal(rate, checkIn, checkOut) {
     if (!checkIn || !checkOut) return 0;
     const d1 = new Date(checkIn);
     const d2 = new Date(checkOut);
-    const nights = Math.floor((d2 - d1) / (1000 * 60 * 60 * 24));
+    const nights = Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
     const units = Math.max(1, nights);
     return units * rate;
 }
